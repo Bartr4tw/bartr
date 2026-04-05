@@ -132,7 +132,6 @@ export default function BartrLanding() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::selection { background: #eab30840; }
-
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-8px); }
@@ -183,6 +182,14 @@ export default function BartrLanding() {
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           <a href="#how" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none", fontWeight: 500 }}>How it works</a>
           <a href="#mission" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none", fontWeight: 500 }}>Mission</a>
+          <a href="/app" style={{ textDecoration: "none" }}>
+            <button style={{
+              background: "transparent",
+              border: "1px solid rgba(234,179,8,0.4)",
+              borderRadius: 24, padding: "8px 20px", fontSize: 13, fontWeight: 600,
+              color: "#eab308", cursor: "pointer", marginRight: 8,
+            }}>Try the app</button>
+          </a>
           <button style={{
             background: "#eab308", border: "none", borderRadius: 24,
             padding: "8px 20px", fontSize: 13, fontWeight: 600,
@@ -199,7 +206,6 @@ export default function BartrLanding() {
         padding: "120px 24px 80px",
         position: "relative", overflow: "hidden",
       }}>
-        {/* Background glow */}
         <div style={{
           position: "absolute", width: 600, height: 600,
           background: "radial-gradient(circle, rgba(234,179,8,0.06) 0%, transparent 70%)",
@@ -213,7 +219,6 @@ export default function BartrLanding() {
           transition: "all 0.8s cubic-bezier(.34,1.56,.64,1)",
           textAlign: "center", maxWidth: 720, position: "relative",
         }}>
-          {/* Eyebrow */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(234,179,8,0.08)",
@@ -224,7 +229,6 @@ export default function BartrLanding() {
             <span style={{ fontSize: 12, color: "#eab308", fontWeight: 600, letterSpacing: 1 }}>COMING SOON · NEW YORK</span>
           </div>
 
-          {/* Headline */}
           <h1 style={{
             fontFamily: "'Cormorant Garamond', serif",
             fontSize: "clamp(52px, 10vw, 96px)",
@@ -237,7 +241,6 @@ export default function BartrLanding() {
             <span style={{ color: "#eab308" }}>Learn what<br />you don't.</span>
           </h1>
 
-          {/* Subhead */}
           <p style={{
             fontSize: 18, color: "#9ca3af", lineHeight: 1.7,
             maxWidth: 520, margin: "0 auto 48px",
@@ -248,9 +251,9 @@ export default function BartrLanding() {
             No money. No algorithms. Just humans teaching humans.
           </p>
 
-          {/* Email signup */}
           <div style={{
-            display: "flex", gap: 0, maxWidth: 420, margin: "0 auto 64px",
+            display: "flex", gap: 12, justifyContent: "center",
+            maxWidth: 420, margin: "0 auto 64px",
             opacity: heroVisible ? 1 : 0,
             transition: "opacity 0.8s ease 0.5s",
           }}>
@@ -292,7 +295,20 @@ export default function BartrLanding() {
             )}
           </div>
 
-          {/* Skill pills */}
+          <div style={{ marginBottom: 24 }}>
+            <a href="/app" style={{ textDecoration: "none" }}>
+              <button style={{
+                background: "rgba(234,179,8,0.1)",
+                border: "1px solid rgba(234,179,8,0.3)",
+                borderRadius: 40, padding: "14px 32px",
+                fontSize: 15, fontWeight: 600, color: "#eab308",
+                cursor: "pointer", letterSpacing: 0.3,
+              }}>
+                ⚡ Try the app demo
+              </button>
+            </a>
+          </div>
+
           <div style={{
             display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center",
             maxWidth: 580, margin: "0 auto",
@@ -402,7 +418,7 @@ export default function BartrLanding() {
         <p style={{ fontSize: 16, color: "#9ca3af", marginBottom: 40 }}>
           Join the waitlist. We're launching in New York first.
         </p>
-        <div style={{ display: "flex", gap: 0, maxWidth: 400, margin: "0 auto" }}>
+        <div style={{ display: "flex", gap: 0, maxWidth: 400, margin: "0 auto 24px" }}>
           {!submitted ? (
             <>
               <input
@@ -436,6 +452,17 @@ export default function BartrLanding() {
             }}>✓ You're on the list</div>
           )}
         </div>
+        <a href="/app" style={{ textDecoration: "none" }}>
+          <button style={{
+            background: "transparent",
+            border: "1px solid rgba(234,179,8,0.3)",
+            borderRadius: 40, padding: "12px 28px",
+            fontSize: 14, fontWeight: 600, color: "#eab308",
+            cursor: "pointer",
+          }}>
+            ⚡ Or try the app demo first
+          </button>
+        </a>
       </section>
 
       {/* Footer */}
