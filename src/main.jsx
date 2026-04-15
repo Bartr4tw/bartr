@@ -5,29 +5,48 @@ import { supabase } from "./supabase.js";
 import App from "./App.jsx";
 import App2 from "./App2.jsx";
 import Auth from "./Auth.jsx";
+import Onboarding from "./Onboarding.jsx";
 import "./index.css";
 
 function Root() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasProfile, setHasProfile] = useState(false);
+
+  const checkProfile = async (userId) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+    setHasProfile(!!data);
+  };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
+      if (session) await checkProfile(session.user.id);
       setLoading(false);
     });
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
+      if (session) await checkProfile(session.user.id);
     });
   }, []);
 
-  if (loading) return null;
+<div style={{color:"white",padding:20}}>Loading...</div>
+
+  const AppRoute = () => {
+    if (!session) return <Auth />;
+    if (!hasProfile) return <Onboarding user={session.user} onComplete={() => setHasProfile(true)} />;
+    return <App2 />;
+  };
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/app" element={session ? <App2 /> : <Auth />} />
+        <Route path="/app" element={<AppRoute />} />
         <Route path="/auth" element={<Auth />} />
       </Routes>
     </BrowserRouter>
