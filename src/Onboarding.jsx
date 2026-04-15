@@ -52,6 +52,7 @@ const SKILLS = [
 
 export default function Onboarding({ user, onComplete }) {
   const [step, setStep] = useState(1);
+  const [fullName, setFullName] = useState(user.user_metadata?.full_name || "");
   const [neighborhood, setNeighborhood] = useState("");
   const [bio, setBio] = useState("");
   const [offering, setOffering] = useState(null);
@@ -70,8 +71,6 @@ export default function Onboarding({ user, onComplete }) {
     if (seeking.length === 0) { setError("Please select at least one thing you want to learn."); return; }
     setLoading(true);
     setError("");
-    console.log("saving profile:", { id: user.id, offering, seeking });
-    console.log("supabase url:", import.meta.env.VITE_SUPABASE_URL);
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles`, {
       method: "POST",
@@ -83,7 +82,7 @@ export default function Onboarding({ user, onComplete }) {
       },
       body: JSON.stringify({
         id: user.id,
-        full_name: user.user_metadata?.full_name || "",
+        full_name: fullName,
         location: neighborhood,
         bio,
         offering: offering.label,
@@ -91,11 +90,9 @@ export default function Onboarding({ user, onComplete }) {
         seeking: seeking.join(","),
       })
     });
-    console.log("fetch result:", response.status, response.statusText);
-    const data = null;
-    const error = response.ok ? null : { message: `HTTP ${response.status}` };
 
-    if (error) { setError(error.message); setLoading(false); }
+    const err = response.ok ? null : { message: `HTTP ${response.status}` };
+    if (err) { setError(err.message); setLoading(false); }
     else onComplete();
   };
 
@@ -116,7 +113,6 @@ export default function Onboarding({ user, onComplete }) {
       `}</style>
 
       <div style={{ width: "100%", maxWidth: 520 }}>
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, fontWeight: 800, color: "#f9fafb", marginBottom: 4 }}>
             Bartr<span style={{ color: "#eab308" }}>.</span>
@@ -137,8 +133,7 @@ export default function Onboarding({ user, onComplete }) {
           background: "#0f1623", border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: 24, padding: "32px",
         }}>
-
-          {/* Step 1 - About you */}
+          {/* Step 1 */}
           {step === 1 && (
             <div>
               <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 700, color: "#f9fafb", marginBottom: 6 }}>
@@ -150,11 +145,18 @@ export default function Onboarding({ user, onComplete }) {
 
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>YOUR NAME</div>
-                <div style={{
-                  padding: "12px 16px", background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
-                  color: "#f9fafb", fontSize: 14,
-                }}>{user.user_metadata?.full_name || "—"}</div>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  style={{
+                    width: "100%", padding: "12px 16px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 12, color: "#f9fafb", fontSize: 14,
+                  }}
+                />
               </div>
 
               <div style={{ marginBottom: 16 }}>
@@ -167,11 +169,9 @@ export default function Onboarding({ user, onComplete }) {
                     background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 12, color: neighborhood ? "#f9fafb" : "#4b5563",
-                    fontSize: 14, cursor: "pointer",
-                    appearance: "none",
+                    fontSize: 14, cursor: "pointer", appearance: "none",
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 16px center",
+                    backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center",
                   }}
                 >
                   <option value="" disabled>Select your neighborhood</option>
@@ -186,7 +186,9 @@ export default function Onboarding({ user, onComplete }) {
               </div>
 
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>SHORT BIO <span style={{ color: "#374151" }}>(optional)</span></div>
+                <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>
+                  SHORT BIO <span style={{ color: "#374151" }}>(optional)</span>
+                </div>
                 <textarea
                   placeholder="Tell people a bit about yourself..."
                   value={bio} onChange={e => setBio(e.target.value)}
@@ -202,9 +204,9 @@ export default function Onboarding({ user, onComplete }) {
               </div>
 
               <button onClick={() => {
+                if (!fullName) { setError("Please enter your name."); return; }
                 if (!neighborhood) { setError("Please select your neighborhood."); return; }
-                setError("");
-                setStep(2);
+                setError(""); setStep(2);
               }} style={{
                 width: "100%", padding: "14px", background: "#eab308",
                 border: "none", borderRadius: 12, color: "#080b14",
@@ -214,7 +216,7 @@ export default function Onboarding({ user, onComplete }) {
             </div>
           )}
 
-          {/* Step 2 - What you offer */}
+          {/* Step 2 */}
           {step === 2 && (
             <div>
               <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 700, color: "#f9fafb", marginBottom: 6 }}>
@@ -262,7 +264,7 @@ export default function Onboarding({ user, onComplete }) {
             </div>
           )}
 
-          {/* Step 3 - What you want to learn */}
+          {/* Step 3 */}
           {step === 3 && (
             <div>
               <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 700, color: "#f9fafb", marginBottom: 6 }}>
