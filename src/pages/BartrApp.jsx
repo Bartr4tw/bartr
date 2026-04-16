@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "../lib/supabase.js";
 
 const PROFILES = [
   {
@@ -311,6 +312,10 @@ export default function BartrApp({ profile }) {
   const width = useWindowWidth();
   const isMobile = width < 768;
   const HEADER_HEIGHT = 64;
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const handleSwipe = (direction) => {
     const current = profiles[0];
@@ -663,6 +668,12 @@ export default function BartrApp({ profile }) {
                 borderRadius: 14, padding: "14px",
                 color: "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer",
               }}>Edit Profile</button>
+              <button onClick={handleSignOut} style={{
+                width: "100%", marginTop: 8,
+                background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+                borderRadius: 14, padding: "14px",
+                color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}>Sign Out</button>
             </div>
           </div>
         )}
