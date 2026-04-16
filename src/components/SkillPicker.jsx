@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { getAuthHeaders } from "../lib/supabase.js";
+import { CATEGORIES } from "../lib/skillsData.js";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-// Anon headers are fine for reading public custom skills list
+// Anon headers are fine for reading the public custom skills list
 const anonHeaders = {
   apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -51,6 +52,7 @@ function invalidateCache() {
  */
 export default function SkillPicker({ mode, skills, value, onChange, exclude }) {
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [dbSkills, setDbSkills] = useState([]);
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState(null); // { type: "duplicate"|"error", text }
@@ -62,12 +64,20 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
     loadCustomSkills().then(setDbSkills);
   }, []);
 
-  const allSkills = [...skills, ...dbSkills];
+  const customSkills = dbSkills.map((s) => ({ ...s, category: "Other" }));
+  const allSkills = [...skills, ...customSkills];
 
   const trimmed = search.trim();
+
+  // When searching, ignore category and show all matches.
+  // When not searching, filter by active category.
   const filtered = allSkills
     .filter((s) => s.label !== exclude)
-    .filter((s) => !trimmed || s.label.toLowerCase().includes(trimmed.toLowerCase()));
+    .filter((s) => {
+      if (trimmed) return s.label.toLowerCase().includes(trimmed.toLowerCase());
+      if (activeCategory === "All") return true;
+      return s.category === activeCategory;
+    });
 
   // Exact case-insensitive match against the full list (not just filtered)
   const exactMatch = allSkills.find(
@@ -154,6 +164,36 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
 
   return (
     <div>
+      {/* Category tabs */}
+      <div style={{
+        display: "flex", gap: 6, overflowX: "auto", marginBottom: 10,
+        paddingBottom: 2,
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}>
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => { setActiveCategory(cat); setSearch(""); setNotice(null); }}
+            style={{
+              flexShrink: 0,
+              padding: "5px 12px",
+              borderRadius: 20,
+              border: activeCategory === cat && !trimmed
+                ? "1px solid rgba(234,179,8,0.5)"
+                : "1px solid rgba(255,255,255,0.08)",
+              background: activeCategory === cat && !trimmed
+                ? "rgba(234,179,8,0.12)"
+                : "rgba(255,255,255,0.03)",
+              color: activeCategory === cat && !trimmed ? "#eab308" : "#6b7280",
+              fontSize: 12, fontWeight: 600, cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              transition: "all 0.15s",
+            }}
+          >{cat}</button>
+        ))}
+      </div>
+
       {/* Search / add input */}
       <div style={{ position: "relative", marginBottom: 10 }}>
         <span style={{
