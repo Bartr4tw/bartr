@@ -43,8 +43,14 @@ function Root() {
       .catch(() => {})
       .finally(() => setLoading(false));
     supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session) await checkProfile(session.user.id);
+      if (session) {
+        await checkProfile(session.user.id);
+        setSession(session);
+      } else {
+        setSession(null);
+        setHasProfile(false);
+        setProfile(null);
+      }
     });
   }, []);
 
