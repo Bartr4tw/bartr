@@ -271,20 +271,16 @@ export default function BartrApp({ profile }) {
   useEffect(() => {
     if (!profile?.id) return;
     Promise.all([
-      fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&select=swiped_id`,
-        { headers: authHeaders }
-      ).then((r) => r.json()),
-      fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?or=(user_a.eq.${profile.id},user_b.eq.${profile.id})&select=user_a,user_b`,
-        { headers: authHeaders }
-      ).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&select=swiped_id`, { headers: authHeaders }).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${profile.id}&select=user_b`, { headers: authHeaders }).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_b=eq.${profile.id}&select=user_a`, { headers: authHeaders }).then((r) => r.json()),
     ])
-      .then(async ([swipes, matches]) => {
-        const swipedIds = (swipes || []).map((s) => s.swiped_id);
-        const matchedIds = (matches || []).map((m) =>
-          m.user_a === profile.id ? m.user_b : m.user_a
-        );
+      .then(async ([swipes, matchesAsA, matchesAsB]) => {
+        const swipedIds = (Array.isArray(swipes) ? swipes : []).map((s) => s.swiped_id);
+        const matchedIds = [
+          ...(Array.isArray(matchesAsA) ? matchesAsA : []).map((m) => m.user_b),
+          ...(Array.isArray(matchesAsB) ? matchesAsB : []).map((m) => m.user_a),
+        ];
         const excludeIds = [...new Set([...swipedIds, ...matchedIds])];
 
         let url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=neq.${profile.id}&select=*`;
@@ -301,22 +297,24 @@ export default function BartrApp({ profile }) {
   // Load persisted matches from DB
   useEffect(() => {
     if (!profile?.id) return;
-    fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?or=(user_a.eq.${profile.id},user_b.eq.${profile.id})&select=*`,
-      { headers: authHeaders }
-    )
-      .then((r) => r.json())
-      .then(async (matchRows) => {
-        if (!matchRows?.length) return;
-        const otherIds = matchRows.map((m) =>
-          m.user_a === profile.id ? m.user_b : m.user_a
-        );
-        const profileRows = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=in.(${otherIds.join(",")})&select=*`,
-          { headers: authHeaders }
-        ).then((r) => r.json());
-        setMatches((profileRows || []).map(transformProfile));
-      });
+    Promise.all([
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${profile.id}&select=*`, { headers: authHeaders }).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_b=eq.${profile.id}&select=*`, { headers: authHeaders }).then((r) => r.json()),
+    ]).then(async ([asA, asB]) => {
+      const matchRows = [
+        ...(Array.isArray(asA) ? asA : []),
+        ...(Array.isArray(asB) ? asB : []),
+      ];
+      if (!matchRows.length) return;
+      const otherIds = matchRows.map((m) =>
+        m.user_a === profile.id ? m.user_b : m.user_a
+      );
+      const profileRows = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=in.(${otherIds.join(",")})&select=*`,
+        { headers: authHeaders }
+      ).then((r) => r.json());
+      setMatches((Array.isArray(profileRows) ? profileRows : []).map(transformProfile));
+    });
   }, [profile?.id]);
 
   const width = useWindowWidth();
@@ -353,7 +351,7 @@ export default function BartrApp({ profile }) {
       );
       const rows = await res.json();
 
-      if (rows?.length > 0) {
+      if (Array.isArray(rows) && rows.length > 0) {
         // Mutual match — save to matches table
         const user_a = profile.id < current.id ? profile.id : current.id;
         const user_b = profile.id < current.id ? current.id : profile.id;
