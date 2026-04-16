@@ -8,6 +8,13 @@ import Auth from "./pages/Auth.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import "./index.css";
 
+function AppRoute({ loading, session, hasProfile, profile, onComplete }) {
+  if (loading) return null;
+  if (!session) return <Auth />;
+  if (!hasProfile) return <Onboarding user={session.user} onComplete={onComplete} />;
+  return <BartrApp profile={profile} />;
+}
+
 function Root() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,21 +57,29 @@ function Root() {
         setSession(null);
         setHasProfile(false);
         setProfile(null);
+        setLoading(false);
       }
     });
   }, []);
 
-  const AppRoute = () => {
-    if (!session) return <Auth />;
-    if (!hasProfile) return <Onboarding user={session.user} onComplete={() => { setHasProfile(true); checkProfile(session.user.id); }} />;
-    return <BartrApp profile={profile} />;
+  const handleOnboardingComplete = () => {
+    setHasProfile(true);
+    checkProfile(session.user.id);
   };
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/app" element={<AppRoute />} />
+        <Route path="/app" element={
+          <AppRoute
+            loading={loading}
+            session={session}
+            hasProfile={hasProfile}
+            profile={profile}
+            onComplete={handleOnboardingComplete}
+          />
+        } />
         <Route path="/auth" element={<Auth />} />
       </Routes>
     </BrowserRouter>
