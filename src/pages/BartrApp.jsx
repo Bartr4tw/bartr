@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 
 const authHeaders = {
@@ -320,6 +321,8 @@ export default function BartrApp({ profile }) {
   const width = useWindowWidth();
   const isMobile = width < 768;
   const HEADER_HEIGHT = 64;
+
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -705,7 +708,7 @@ export default function BartrApp({ profile }) {
                   </div>
                 </div>
               </div>
-              <button style={{
+              <button onClick={() => navigate("/profile/edit")} style={{
                 width: "100%", marginTop: 12,
                 background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
                 borderRadius: 14, padding: "14px",
