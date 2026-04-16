@@ -31,6 +31,12 @@ export default function Auth() {
       });
       if (error) setError(error.message);
       else setMessage("Check your email for a confirmation link!");
+    } else if (mode === "forgot") {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) setError(error.message);
+      else setMessage("Check your email for a password reset link!");
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       console.log("login result:", data, error);
@@ -78,30 +84,32 @@ export default function Auth() {
             </div>
           </a>
           <div style={{ fontSize: 13, color: "#6b7280" }}>
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            {mode === "login" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}
           </div>
         </div>
 
         {/* Form */}
         <div style={{ padding: "28px 32px 32px" }}>
-          {/* Toggle */}
-          <div style={{
-            display: "flex", background: "rgba(255,255,255,0.03)",
-            borderRadius: 12, padding: 4, marginBottom: 24,
-            border: "1px solid rgba(255,255,255,0.06)",
-          }}>
-            {["login", "signup"].map(m => (
-              <button key={m} onClick={() => { setMode(m); setError(""); setMessage(""); }} style={{
-                flex: 1, padding: "8px",
-                background: mode === m ? "rgba(234,179,8,0.1)" : "transparent",
-                border: mode === m ? "1px solid rgba(234,179,8,0.2)" : "1px solid transparent",
-                borderRadius: 9, color: mode === m ? "#eab308" : "#6b7280",
-                fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
-              }}>
-                {m === "login" ? "Log in" : "Sign up"}
-              </button>
-            ))}
-          </div>
+          {/* Toggle — hidden in forgot mode */}
+          {mode !== "forgot" && (
+            <div style={{
+              display: "flex", background: "rgba(255,255,255,0.03)",
+              borderRadius: 12, padding: 4, marginBottom: 24,
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}>
+              {["login", "signup"].map(m => (
+                <button key={m} onClick={() => { setMode(m); setError(""); setMessage(""); }} style={{
+                  flex: 1, padding: "8px",
+                  background: mode === m ? "rgba(234,179,8,0.1)" : "transparent",
+                  border: mode === m ? "1px solid rgba(234,179,8,0.2)" : "1px solid transparent",
+                  borderRadius: 9, color: mode === m ? "#eab308" : "#6b7280",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                }}>
+                  {m === "login" ? "Log in" : "Sign up"}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Full name — signup only */}
           {mode === "signup" && (
@@ -141,28 +149,53 @@ export default function Auth() {
             />
           </div>
 
-          {/* Password */}
-          <div style={{ marginBottom: mode === "signup" ? 14 : 24 }}>
-            <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>PASSWORD</div>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => mode === "login" && e.key === "Enter" && handleSubmit()}
-              style={{
-                width: "100%", padding: "12px 16px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 12, color: "#f9fafb", fontSize: 14,
-                transition: "border-color 0.2s",
-              }}
-            />
-          </div>
+          {/* Password — hidden in forgot mode */}
+          {mode !== "forgot" && (
+            <div style={{ marginBottom: mode === "signup" ? 14 : 8 }}>
+              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>PASSWORD</div>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => mode === "login" && e.key === "Enter" && handleSubmit()}
+                style={{
+                  width: "100%", padding: "12px 16px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 12, color: "#f9fafb", fontSize: 14,
+                  transition: "border-color 0.2s",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Forgot password link — login mode only */}
+          {mode === "login" && (
+            <div style={{ textAlign: "right", marginBottom: 24 }}>
+              <button
+                onClick={() => { setMode("forgot"); setError(""); setMessage(""); }}
+                style={{
+                  background: "none", border: "none", padding: 0,
+                  color: "#6b7280", fontSize: 12, cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >Forgot password?</button>
+            </div>
+          )}
+
+          {/* Back to login — forgot mode only */}
+          {mode === "forgot" && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.6 }}>
+                Enter your email and we'll send you a link to reset your password.
+              </div>
+            </div>
+          )}
 
           {/* Confirm password — signup only */}
           {mode === "signup" && (
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 24, marginTop: 14 }}>
               <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>CONFIRM PASSWORD</div>
               <input
                 type="password"
@@ -205,8 +238,22 @@ export default function Auth() {
             cursor: loading ? "not-allowed" : "pointer",
             opacity: loading ? 0.7 : 1, transition: "opacity 0.2s",
           }}>
-            {loading ? "Loading..." : mode === "login" ? "Log in" : "Create account"}
+            {loading ? "Loading..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}
           </button>
+
+          {/* Back to login — forgot mode */}
+          {mode === "forgot" && (
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <button
+                onClick={() => { setMode("login"); setError(""); setMessage(""); }}
+                style={{
+                  background: "none", border: "none", padding: 0,
+                  color: "#6b7280", fontSize: 13, cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >Back to log in</button>
+            </div>
+          )}
 
           {/* Terms — signup only */}
           {mode === "signup" && (
