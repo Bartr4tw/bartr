@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 import { SKILLS } from "../lib/skillsData.js";
 
+const C = {
+  cream: "#FAF6EE", warmWhite: "#FDFAF4",
+  sand: "#F5EFE0", sandDark: "#EDE3CC",
+  clay: "#C07A52", clayDeep: "#9B5C38",
+  terracotta: "#D4714A",
+  bark: "#4A3728", barkLight: "#7A5C47",
+  moss: "#7A8C5C",
+};
 
 function transformProfile(row) {
   const seekingLabels = row.seeking ? row.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [];
@@ -31,17 +39,17 @@ function Avatar({ url, initials, size, fontSize, border }) {
   if (url) return (
     <img src={url} style={{
       ...shared, objectFit: "cover",
-      border: border ?? "2px solid rgba(234,179,8,0.3)",
+      border: border ?? `2px solid ${C.sandDark}`,
     }} />
   );
   return (
     <div style={{
       ...shared,
-      background: "rgba(234,179,8,0.1)",
-      border: border ?? "2px solid rgba(234,179,8,0.3)",
+      background: C.sand,
+      border: border ?? `2px solid ${C.sandDark}`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
-      fontSize, color: "#eab308",
+      fontFamily: "'Fraunces', serif", fontWeight: 600,
+      fontSize, color: C.terracotta,
     }}>{initials}</div>
   );
 }
@@ -106,78 +114,78 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
     >
       <div style={{
         position: "absolute", top: 24, left: 24, zIndex: 20,
-        border: "3px solid #eab308", borderRadius: 8, padding: "4px 14px",
-        color: "#eab308", fontFamily: "'Cormorant Garamond', serif", fontWeight: 800,
+        border: `3px solid ${C.terracotta}`, borderRadius: 8, padding: "4px 14px",
+        color: C.terracotta, fontFamily: "'Fraunces', serif", fontWeight: 600,
         fontSize: 18, letterSpacing: 2, opacity: connectOpacity,
         transform: "rotate(-15deg)", pointerEvents: "none",
       }}>CONNECT</div>
       <div style={{
         position: "absolute", top: 24, right: 24, zIndex: 20,
-        border: "3px solid #6b7280", borderRadius: 8, padding: "4px 14px",
-        color: "#6b7280", fontFamily: "'Cormorant Garamond', serif", fontWeight: 800,
+        border: `3px solid ${C.barkLight}`, borderRadius: 8, padding: "4px 14px",
+        color: C.barkLight, fontFamily: "'Fraunces', serif", fontWeight: 600,
         fontSize: 18, letterSpacing: 2, opacity: skipOpacity,
         transform: "rotate(15deg)", pointerEvents: "none",
       }}>SKIP</div>
 
       <div style={{
-        background: "#0f1623", borderRadius: 24, height: "100%",
-        boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
+        background: C.warmWhite, borderRadius: 24, height: "100%",
+        boxShadow: "0 4px 16px rgba(74,55,40,0.07), 0 0 0 1.5px " + C.sandDark,
         display: "flex", flexDirection: isMobile ? "column" : "row",
         overflow: "hidden",
       }}>
         {/* Left panel */}
         <div style={{
-          background: "linear-gradient(160deg, #111827, #1a2235)",
+          background: C.sand,
           padding: "32px 28px",
           display: "flex", flexDirection: "column", justifyContent: "space-between",
-          borderRight: isMobile ? "none" : "1px solid rgba(234,179,8,0.08)",
-          borderBottom: isMobile ? "1px solid rgba(234,179,8,0.08)" : "none",
+          borderRight: isMobile ? "none" : `1.5px solid ${C.sandDark}`,
+          borderBottom: isMobile ? `1.5px solid ${C.sandDark}` : "none",
           flex: isMobile ? "none" : "0 0 280px",
           position: "relative", overflow: "hidden",
         }}>
           <div style={{
             position: "absolute", top: -40, right: -40,
             width: 160, height: 160, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(234,179,8,0.07), transparent 70%)",
+            background: `radial-gradient(circle, rgba(212,113,74,0.08), transparent 70%)`,
             pointerEvents: "none",
           }} />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <Avatar url={profile.avatarUrl} initials={profile.avatar} size={68} fontSize={22} />
               <div>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 700, color: "#f9fafb" }}>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: C.bark }}>
                   {profile.name}{profile.age ? `, ${profile.age}` : ""}
                 </div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>📍 {profile.location}</div>
+                <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {profile.location}</div>
               </div>
             </div>
             {profile.tags?.length > 0 && (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 28 }}>
                 {profile.tags.map(t => (
                   <span key={t} style={{
-                    background: "rgba(234,179,8,0.08)",
-                    border: "1px solid rgba(234,179,8,0.15)",
+                    background: C.sandDark,
+                    border: `1px solid ${C.sandDark}`,
                     borderRadius: 20, padding: "3px 10px",
-                    fontSize: 11, color: "#9ca3af", fontWeight: 600,
+                    fontSize: 11, color: C.barkLight, fontWeight: 500,
                   }}>{t}</span>
                 ))}
               </div>
             )}
           </div>
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>WANTS TO LEARN</div>
+            <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>WANTS TO LEARN</div>
             <div style={{ display: "flex", gap: 8 }}>
               {profile.seeking.map((s, i) => {
                 const isMatch = yourProfile.seeking.includes(s);
                 return (
                   <div key={s} style={{
                     flex: 1, borderRadius: 12, padding: "12px 6px", textAlign: "center",
-                    background: isMatch ? "rgba(234,179,8,0.08)" : "rgba(255,255,255,0.03)",
-                    border: isMatch ? "1px solid rgba(234,179,8,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                    background: isMatch ? `rgba(212,113,74,0.10)` : C.warmWhite,
+                    border: isMatch ? `1px solid rgba(212,113,74,0.30)` : `1px solid ${C.sandDark}`,
                   }}>
                     {profile.seekingIcons?.[i] && <div style={{ fontSize: 20 }}>{profile.seekingIcons[i]}</div>}
-                    <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>{s}</div>
-                    {isMatch && <div style={{ fontSize: 9, color: "#eab308", marginTop: 3, fontWeight: 600 }}>You offer!</div>}
+                    <div style={{ fontSize: 10, color: C.barkLight, marginTop: 4 }}>{s}</div>
+                    {isMatch && <div style={{ fontSize: 9, color: C.terracotta, marginTop: 3, fontWeight: 600 }}>You offer!</div>}
                   </div>
                 );
               })}
@@ -190,40 +198,41 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
           padding: "32px 28px",
           display: "flex", flexDirection: "column", justifyContent: "space-between",
           flex: 1, overflow: "hidden",
+          background: C.warmWhite,
         }}>
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 14, fontWeight: 700 }}>OFFERING</div>
+            <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 14, fontWeight: 700 }}>OFFERING</div>
             <div style={{
               display: "flex", alignItems: "center", gap: 14,
-              background: "rgba(234,179,8,0.06)",
-              border: "1px solid rgba(234,179,8,0.15)",
+              background: C.sand,
+              border: `1.5px solid ${C.sandDark}`,
               borderRadius: 16, padding: "18px 20px", marginBottom: 20,
             }}>
               <span style={{ fontSize: 36 }}>{profile.offeringIcon}</span>
               <div>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 700, color: "#f9fafb" }}>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: C.bark }}>
                   {profile.offering}
                 </div>
                 {profile.offeringLevel && (
                   <span style={{
-                    background: "rgba(234,179,8,0.1)", borderRadius: 20,
-                    padding: "3px 12px", fontSize: 12, color: "#eab308", fontWeight: 600,
+                    background: `rgba(212,113,74,0.10)`, borderRadius: 20,
+                    padding: "3px 12px", fontSize: 12, color: C.terracotta, fontWeight: 500,
                   }}>{profile.offeringLevel}</span>
                 )}
               </div>
             </div>
-            <p style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1.8 }}>{profile.offeringDesc}</p>
+            <p style={{ fontSize: 14, color: C.barkLight, lineHeight: 1.8 }}>{profile.offeringDesc}</p>
           </div>
 
           {!isMobile && (
             <div style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px dashed rgba(255,255,255,0.08)",
+              background: C.sand,
+              border: `1px dashed ${C.sandDark}`,
               borderRadius: 16, padding: "20px",
               textAlign: "center", marginTop: 20,
             }}>
               <div style={{ fontSize: 24, marginBottom: 6 }}>🎬</div>
-              <div style={{ fontSize: 12, color: "#4b5563" }}>Skill video coming soon</div>
+              <div style={{ fontSize: 12, color: C.barkLight }}>Skill video coming soon</div>
             </div>
           )}
         </div>
@@ -235,26 +244,27 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
 function MatchCard({ profile, yourProfile }) {
   return (
     <div style={{
-      background: "#0f1623", borderRadius: 16, padding: "16px",
-      border: "1px solid rgba(255,255,255,0.06)",
+      background: C.warmWhite, borderRadius: 16, padding: "16px",
+      border: `1.5px solid ${C.sandDark}`,
+      boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
       display: "flex", alignItems: "center", gap: 14,
     }}>
-      <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border="1px solid rgba(234,179,8,0.2)" />
+      <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border={`1.5px solid ${C.sandDark}`} />
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, color: "#f9fafb", fontSize: 16 }}>
+        <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, color: C.bark, fontSize: 16 }}>
           {profile.name}
         </div>
-        <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-          {profile.offeringIcon} {profile.offering} <span style={{ color: "#eab308" }}>↔</span> {yourProfile.offeringIcon} {yourProfile.offering}
+        <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>
+          {profile.offeringIcon} {profile.offering} <span style={{ color: C.terracotta }}>↔</span> {yourProfile.offeringIcon} {yourProfile.offering}
         </div>
       </div>
       <button
         onClick={() => window.location.href = `/chat/${profile.id}`}
         style={{
-          background: "rgba(234,179,8,0.1)",
-          border: "1px solid rgba(234,179,8,0.2)",
-          borderRadius: 20, padding: "7px 16px",
-          color: "#eab308", fontSize: 12, fontWeight: 600, cursor: "pointer",
+          background: `rgba(212,113,74,0.10)`,
+          border: `1px solid rgba(212,113,74,0.25)`,
+          borderRadius: 100, padding: "7px 16px",
+          color: C.terracotta, fontSize: 12, fontWeight: 500, cursor: "pointer",
         }}>Message</button>
     </div>
   );
@@ -391,13 +401,13 @@ export default function BartrApp({ profile, session }) {
   return (
     <div style={{
       height: "100vh", overflow: "hidden",
-      background: "#080b14",
+      background: C.cream,
       fontFamily: "'DM Sans', sans-serif",
-      color: "#f3f4f6",
+      color: C.bark,
       display: "flex", flexDirection: "column",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
         * { box-sizing: border-box; }
         @keyframes matchPop { from { opacity:0; transform:translate(-50%,-50%) scale(0.8); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
@@ -408,14 +418,13 @@ export default function BartrApp({ profile, session }) {
         height: HEADER_HEIGHT, flexShrink: 0,
         padding: isMobile ? "0 20px" : "0 40px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
-        background: "rgba(8,11,20,0.95)",
-        backdropFilter: "blur(20px)",
+        borderBottom: `1px solid ${C.sandDark}`,
+        background: C.warmWhite,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           <a href="/" style={{ textDecoration: "none" }}>
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 800, letterSpacing: -0.5, color: "#f9fafb" }}>
-              Bartr<span style={{ color: "#eab308" }}>.</span>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, letterSpacing: -0.5, color: C.bark }}>
+              Bartr<span style={{ color: C.terracotta }}>.</span>
             </div>
           </a>
           {!isMobile && (
@@ -424,17 +433,17 @@ export default function BartrApp({ profile, session }) {
                 <button key={tab.label} onClick={() => setActiveTab(i)} style={{
                   padding: "0 18px", height: HEADER_HEIGHT,
                   background: "transparent", border: "none",
-                  borderBottom: activeTab === i ? "2px solid #eab308" : "2px solid transparent",
-                  color: activeTab === i ? "#eab308" : "#6b7280",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                  borderBottom: activeTab === i ? `2px solid ${C.terracotta}` : "2px solid transparent",
+                  color: activeTab === i ? C.terracotta : C.barkLight,
+                  fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s",
                   display: "flex", alignItems: "center", gap: 6,
                 }}>
                   {tab.icon} {tab.label}
                   {tab.label === "Matches" && matches.length > 0 && (
                     <span style={{
-                      background: "#eab308", borderRadius: "50%", width: 17, height: 17,
+                      background: C.terracotta, borderRadius: "50%", width: 17, height: 17,
                       display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 9, color: "#080b14", fontWeight: 800,
+                      fontSize: 9, color: C.warmWhite, fontWeight: 700,
                     }}>{matches.length}</span>
                   )}
                 </button>
@@ -444,11 +453,11 @@ export default function BartrApp({ profile, session }) {
         </div>
         <button onClick={() => setActiveTab(2)} style={{
           display: "flex", alignItems: "center", gap: 8,
-          background: activeTab === 2 ? "rgba(234,179,8,0.12)" : "rgba(255,255,255,0.04)",
-          border: activeTab === 2 ? "1px solid rgba(234,179,8,0.3)" : "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 24, padding: "6px 14px",
-          color: activeTab === 2 ? "#eab308" : "#9ca3af",
-          fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+          background: activeTab === 2 ? `rgba(212,113,74,0.10)` : C.sand,
+          border: activeTab === 2 ? `1px solid rgba(212,113,74,0.30)` : `1px solid ${C.sandDark}`,
+          borderRadius: 100, padding: "6px 14px",
+          color: activeTab === 2 ? C.terracotta : C.barkLight,
+          fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s",
         }}>
           ◉ Profile
         </button>
@@ -480,8 +489,8 @@ export default function BartrApp({ profile, session }) {
                       <div style={{
                         position: "absolute", inset: 0, top: 10,
                         transform: "scale(0.97)", opacity: 0.35,
-                        pointerEvents: "none", background: "#0f1623",
-                        borderRadius: 24, border: "1px solid rgba(255,255,255,0.04)",
+                        pointerEvents: "none", background: C.warmWhite,
+                        borderRadius: 24, border: `1.5px solid ${C.sandDark}`,
                       }} />
                     )}
                     <div style={{ position: "absolute", inset: 0 }}>
@@ -492,38 +501,38 @@ export default function BartrApp({ profile, session }) {
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 20 }}>
                     <button onClick={() => handleSwipe("left")} style={{
                       width: 58, height: 58, borderRadius: "50%",
-                      background: lastAction === "left" ? "rgba(107,114,128,0.2)" : "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(107,114,128,0.25)",
+                      background: lastAction === "left" ? C.sandDark : C.sand,
+                      border: `1px solid ${C.sandDark}`,
                       fontSize: 22, cursor: "pointer", transition: "all 0.2s",
-                      display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280",
+                      display: "flex", alignItems: "center", justifyContent: "center", color: C.barkLight,
                     }}>✕</button>
                     <button onClick={() => handleSwipe("right")} style={{
                       width: 68, height: 68, borderRadius: "50%",
-                      background: lastAction === "right" ? "rgba(234,179,8,0.2)" : "rgba(234,179,8,0.08)",
-                      border: "2px solid rgba(234,179,8,0.4)",
+                      background: lastAction === "right" ? `rgba(212,113,74,0.20)` : `rgba(212,113,74,0.10)`,
+                      border: `2px solid rgba(212,113,74,0.45)`,
                       fontSize: 26, cursor: "pointer", transition: "all 0.2s",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      boxShadow: "0 0 24px rgba(234,179,8,0.15)",
+                      boxShadow: "0 0 24px rgba(212,113,74,0.15)",
                     }}>⚡</button>
                     <button style={{
                       width: 58, height: 58, borderRadius: "50%",
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.07)",
+                      background: C.sand,
+                      border: `1px solid ${C.sandDark}`,
                       fontSize: 20, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>⭐</button>
                   </div>
-                  <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "#374151", letterSpacing: 0.5 }}>
+                  <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: C.barkLight, letterSpacing: 0.5 }}>
                     SWIPE OR TAP · ✕ SKIP · ⚡ CONNECT
                   </div>
                 </>
               ) : (
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}>{profilesLoading ? "⏳" : "✨"}</div>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
+                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 400, color: C.bark, marginBottom: 8 }}>
                     {profilesLoading ? "Finding skill traders..." : "You've seen everyone"}
                   </div>
-                  <div style={{ color: "#4b5563", fontSize: 14 }}>
+                  <div style={{ color: C.barkLight, fontSize: 14 }}>
                     {profilesLoading ? "" : "Check back soon for new skill traders"}
                   </div>
                 </div>
@@ -534,71 +543,77 @@ export default function BartrApp({ profile, session }) {
             {!isMobile && (
               <div style={{
                 width: 260, flexShrink: 0,
-                borderLeft: "1px solid rgba(255,255,255,0.04)",
+                borderLeft: `1px solid ${C.sandDark}`,
                 padding: "28px 20px",
                 overflowY: "auto",
                 display: "flex", flexDirection: "column", gap: 14,
+                background: C.warmWhite,
               }}>
                 <div style={{
-                  background: "#0f1623", borderRadius: 18,
-                  border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden",
+                  background: C.warmWhite, borderRadius: 18,
+                  border: `1.5px solid ${C.sandDark}`,
+                  boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
+                  overflow: "hidden",
                 }}>
                   <div style={{
-                    background: "linear-gradient(135deg, #111827, #1a2235)",
-                    padding: "16px", borderBottom: "1px solid rgba(234,179,8,0.08)",
+                    background: C.sand,
+                    padding: "16px", borderBottom: `1px solid ${C.sandDark}`,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <Avatar url={YOUR_PROFILE.avatarUrl} initials={YOUR_PROFILE.avatar} size={44} fontSize={16} />
                       <div>
-                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.name}</div>
-                        <div style={{ fontSize: 11, color: "#6b7280" }}>📍 {YOUR_PROFILE.location}</div>
+                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, fontWeight: 600, color: C.bark }}>{YOUR_PROFILE.name}</div>
+                        <div style={{ fontSize: 11, color: C.barkLight }}>📍 {YOUR_PROFILE.location}</div>
                       </div>
                     </div>
                   </div>
                   <div style={{ padding: "12px" }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#4b5563", marginBottom: 8, fontWeight: 700 }}>YOU OFFER</div>
+                    <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, marginBottom: 8, fontWeight: 700 }}>YOU OFFER</div>
                     <div style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      background: "rgba(234,179,8,0.06)",
-                      border: "1px solid rgba(234,179,8,0.15)",
+                      background: C.sand,
+                      border: `1px solid ${C.sandDark}`,
                       borderRadius: 10, padding: "9px 12px",
                     }}>
                       <span style={{ fontSize: 18 }}>{YOUR_PROFILE.offeringIcon}</span>
-                      <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 14, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.offering}</span>
+                      <span style={{ fontFamily: "'Fraunces', serif", fontSize: 14, fontWeight: 600, color: C.bark }}>{YOUR_PROFILE.offering}</span>
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  background: "#0f1623", borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: C.warmWhite, borderRadius: 14,
+                  border: `1.5px solid ${C.sandDark}`,
+                  boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
                   padding: "14px", display: "flex", justifyContent: "space-around",
                 }}>
                   {[["Left", profiles.length], ["Matched", matches.length]].map(([label, val]) => (
                     <div key={label} style={{ textAlign: "center" }}>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 700, color: "#eab308" }}>{val}</div>
-                      <div style={{ fontSize: 10, color: "#4b5563" }}>{label.toUpperCase()}</div>
+                      <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 400, color: C.clayDeep }}>{val}</div>
+                      <div style={{ fontSize: 10, color: C.barkLight }}>{label.toUpperCase()}</div>
                     </div>
                   ))}
                 </div>
 
                 {matches.length > 0 && (
                   <div style={{
-                    background: "#0f1623", borderRadius: 14,
-                    border: "1px solid rgba(255,255,255,0.06)", padding: "14px",
+                    background: C.warmWhite, borderRadius: 14,
+                    border: `1.5px solid ${C.sandDark}`,
+                    boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
+                    padding: "14px",
                   }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>MATCHES</div>
+                    <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>MATCHES</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {matches.slice(0, 5).map(m => (
                         <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <Avatar url={m.avatarUrl} initials={m.avatar} size={34} fontSize={11} border="1px solid rgba(234,179,8,0.2)" />
+                          <Avatar url={m.avatarUrl} initials={m.avatar} size={34} fontSize={11} border={`1.5px solid ${C.sandDark}`} />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: "#f9fafb" }}>{m.name}</div>
-                            <div style={{ fontSize: 10, color: "#6b7280" }}>{m.offeringIcon} {m.offering}</div>
+                            <div style={{ fontSize: 12, fontWeight: 500, color: C.bark }}>{m.name}</div>
+                            <div style={{ fontSize: 10, color: C.barkLight }}>{m.offeringIcon} {m.offering}</div>
                           </div>
                           <button onClick={() => navigate(`/chat/${m.id}`)} style={{
                             background: "transparent", border: "none",
-                            color: "#eab308", fontSize: 10, cursor: "pointer", fontWeight: 600,
+                            color: C.terracotta, fontSize: 10, cursor: "pointer", fontWeight: 500,
                           }}>Chat</button>
                         </div>
                       ))}
@@ -617,12 +632,12 @@ export default function BartrApp({ profile, session }) {
               {matches.length === 0 ? (
                 <div style={{ textAlign: "center", paddingTop: 80 }}>
                   <div style={{ fontSize: 44, marginBottom: 14 }}>⚡</div>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 700, marginBottom: 8 }}>No matches yet</div>
-                  <div style={{ color: "#4b5563", fontSize: 13 }}>Start discovering skill partners</div>
+                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 400, color: C.bark, marginBottom: 8 }}>No matches yet</div>
+                  <div style={{ color: C.barkLight, fontSize: 13 }}>Start discovering skill partners</div>
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 11, color: "#4b5563", marginBottom: 16, letterSpacing: 0.5 }}>
+                  <div style={{ fontSize: 11, color: C.barkLight, marginBottom: 16, letterSpacing: 0.5 }}>
                     {matches.length} MUTUAL MATCH{matches.length !== 1 ? "ES" : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -638,75 +653,79 @@ export default function BartrApp({ profile, session }) {
         {activeTab === 2 && (
           <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "40px" }}>
             <div style={{ maxWidth: 600, margin: "0 auto" }}>
-              <div style={{ background: "#0f1623", borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{
+                background: C.warmWhite, borderRadius: 20, overflow: "hidden",
+                border: `1.5px solid ${C.sandDark}`,
+                boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
+              }}>
                 <div style={{
-                  background: "linear-gradient(135deg, #111827, #1a2235)",
-                  padding: "28px 24px", borderBottom: "1px solid rgba(234,179,8,0.08)",
+                  background: C.sand,
+                  padding: "28px 24px", borderBottom: `1px solid ${C.sandDark}`,
                   position: "relative", overflow: "hidden",
                 }}>
                   <div style={{
                     position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%",
-                    background: "radial-gradient(circle, rgba(234,179,8,0.06), transparent 70%)",
+                    background: `radial-gradient(circle, rgba(212,113,74,0.08), transparent 70%)`,
                   }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <Avatar url={YOUR_PROFILE.avatarUrl} initials={YOUR_PROFILE.avatar} size={72} fontSize={24} border="2px solid rgba(234,179,8,0.35)" />
+                    <Avatar url={YOUR_PROFILE.avatarUrl} initials={YOUR_PROFILE.avatar} size={72} fontSize={24} border={`2px solid ${C.sandDark}`} />
                     <div>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.name}</div>
-                      <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>📍 {YOUR_PROFILE.location}</div>
+                      <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: C.bark }}>{YOUR_PROFILE.name}</div>
+                      <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {YOUR_PROFILE.location}</div>
                       <div style={{
                         display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
-                        background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)",
-                        borderRadius: 20, padding: "3px 12px",
+                        background: `rgba(212,113,74,0.10)`, border: `1px solid rgba(212,113,74,0.25)`,
+                        borderRadius: 100, padding: "3px 12px",
                       }}>
-                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#eab308", animation: "pulse 2s infinite" }} />
-                        <span style={{ fontSize: 10, color: "#eab308", fontWeight: 600 }}>ACTIVE</span>
+                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.terracotta, animation: "pulse 2s infinite" }} />
+                        <span style={{ fontSize: 10, color: C.terracotta, fontWeight: 600 }}>ACTIVE</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div style={{ padding: "20px 24px" }}>
                   <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>I OFFER</div>
+                    <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>I OFFER</div>
                     <div style={{
                       display: "flex", alignItems: "center", gap: 14,
-                      background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.2)",
+                      background: C.sand, border: `1.5px solid ${C.sandDark}`,
                       borderRadius: 14, padding: "14px 16px",
                     }}>
                       <span style={{ fontSize: 30 }}>{YOUR_PROFILE.offeringIcon}</span>
                       <div>
-                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.offering}</div>
+                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: C.bark }}>{YOUR_PROFILE.offering}</div>
                       </div>
                     </div>
                   </div>
                   <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>I WANT TO LEARN</div>
+                    <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>I WANT TO LEARN</div>
                     <div style={{ display: "flex", gap: 8 }}>
                       {YOUR_PROFILE.seeking.map((s, i) => (
                         <div key={s} style={{
-                          flex: 1, background: "rgba(255,255,255,0.03)",
-                          border: "1px solid rgba(255,255,255,0.07)",
+                          flex: 1, background: C.sand,
+                          border: `1px solid ${C.sandDark}`,
                           borderRadius: 12, padding: "12px 8px", textAlign: "center",
                         }}>
                           <div style={{ fontSize: 22 }}>{YOUR_PROFILE.seekingIcons[i]}</div>
-                          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{s}</div>
+                          <div style={{ fontSize: 11, color: C.barkLight, marginTop: 4 }}>{s}</div>
                         </div>
                       ))}
                     </div>
                   </div>
                   {profile?.bio && (
                     <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>ABOUT ME</div>
-                      <p style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
+                      <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>ABOUT ME</div>
+                      <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
                     </div>
                   )}
                   <div style={{
-                    paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.05)",
+                    paddingTop: 20, borderTop: `1px solid ${C.sandDark}`,
                     display: "flex", justifyContent: "space-between",
                   }}>
                     {[["Matches", matches.length], ["Seen", seenCount], ["Skills", YOUR_PROFILE.seeking.length]].map(([label, val]) => (
                       <div key={label} style={{ textAlign: "center" }}>
-                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 700, color: "#eab308" }}>{val}</div>
-                        <div style={{ fontSize: 11, color: "#4b5563", letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
+                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400, color: C.clayDeep }}>{val}</div>
+                        <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
                       </div>
                     ))}
                   </div>
@@ -714,15 +733,15 @@ export default function BartrApp({ profile, session }) {
               </div>
               <button onClick={() => navigate("/profile/edit")} style={{
                 width: "100%", marginTop: 12,
-                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 14, padding: "14px",
-                color: "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                background: C.sand, border: `1px solid ${C.sandDark}`,
+                borderRadius: 100, padding: "14px",
+                color: C.barkLight, fontSize: 13, fontWeight: 500, cursor: "pointer",
               }}>Edit Profile</button>
               <button onClick={handleSignOut} style={{
                 width: "100%", marginTop: 8,
-                background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
-                borderRadius: 14, padding: "14px",
-                color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                background: "rgba(192,122,82,0.08)", border: "1px solid rgba(192,122,82,0.25)",
+                borderRadius: 100, padding: "14px",
+                color: C.clay, fontSize: 13, fontWeight: 500, cursor: "pointer",
               }}>Sign Out</button>
             </div>
           </div>
@@ -733,15 +752,15 @@ export default function BartrApp({ profile, session }) {
       {isMobile && (
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
-          background: "rgba(8,11,20,0.95)", backdropFilter: "blur(20px)",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          background: C.warmWhite,
+          borderTop: `1px solid ${C.sandDark}`,
           display: "flex", padding: "8px 0 16px", zIndex: 40,
         }}>
           {TABS.map((tab, i) => (
             <button key={tab.label} onClick={() => setActiveTab(i)} style={{
               flex: 1, padding: "8px 0", background: "transparent", border: "none",
-              color: activeTab === i ? "#eab308" : "#4b5563",
-              fontSize: 11, fontWeight: 600, cursor: "pointer",
+              color: activeTab === i ? C.terracotta : C.barkLight,
+              fontSize: 11, fontWeight: 500, cursor: "pointer",
               display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
             }}>
               <span style={{ fontSize: 18 }}>{tab.icon}</span>
@@ -754,31 +773,31 @@ export default function BartrApp({ profile, session }) {
       {/* Match overlay */}
       {showMatch && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(8,11,20,0.85)",
+          position: "fixed", inset: 0, background: "rgba(250,246,238,0.88)",
           backdropFilter: "blur(8px)", zIndex: 100,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <div style={{
-            background: "#0f1623", border: "1px solid rgba(234,179,8,0.3)",
+            background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
             borderRadius: 28, padding: "44px 48px", textAlign: "center",
-            boxShadow: "0 0 100px rgba(234,179,8,0.15), 0 24px 64px rgba(0,0,0,0.8)",
+            boxShadow: "0 4px 16px rgba(74,55,40,0.07), 0 24px 64px rgba(74,55,40,0.12)",
             animation: "matchPop 0.4s cubic-bezier(.34,1.56,.64,1)",
             maxWidth: 320, margin: "0 20px",
           }}>
             <div style={{ fontSize: 48, marginBottom: 8 }}>⚡</div>
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, fontWeight: 800, color: "#eab308", marginBottom: 8 }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: C.terracotta, marginBottom: 8 }}>
               Skill Match!
             </div>
-            <div style={{ fontSize: 14, color: "#9ca3af", marginBottom: 20, lineHeight: 1.6 }}>
-              You and <strong style={{ color: "#f9fafb" }}>{showMatch.name}</strong> can trade skills
+            <div style={{ fontSize: 14, color: C.barkLight, marginBottom: 20, lineHeight: 1.6 }}>
+              You and <strong style={{ color: C.bark }}>{showMatch.name}</strong> can trade skills
             </div>
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
-              background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.15)",
-              borderRadius: 14, padding: "14px 20px", fontSize: 13, color: "#9ca3af",
+              background: C.sand, border: `1px solid ${C.sandDark}`,
+              borderRadius: 14, padding: "14px 20px", fontSize: 13, color: C.barkLight,
             }}>
               <span>{showMatch.offeringIcon} {showMatch.offering}</span>
-              <span style={{ color: "#eab308", fontSize: 16 }}>↔</span>
+              <span style={{ color: C.terracotta, fontSize: 16 }}>↔</span>
               <span>{YOUR_PROFILE.offeringIcon} {YOUR_PROFILE.offering}</span>
             </div>
           </div>

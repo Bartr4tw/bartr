@@ -4,26 +4,32 @@ import { supabase } from "../lib/supabase.js";
 import { NEIGHBORHOODS, SKILLS } from "../lib/skillsData.js";
 import SkillPicker from "../components/SkillPicker.jsx";
 
-const selectStyle = {
-  width: "100%", padding: "12px 16px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  borderRadius: 12, fontSize: 14, cursor: "pointer",
-  appearance: "none",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center",
+const C = {
+  cream: "#FAF6EE", warmWhite: "#FDFAF4",
+  sand: "#F5EFE0", sandDark: "#EDE3CC",
+  clay: "#C07A52", clayDeep: "#9B5C38",
+  terracotta: "#D4714A",
+  bark: "#4A3728", barkLight: "#7A5C47",
 };
 
 const inputStyle = {
   width: "100%", padding: "12px 16px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  borderRadius: 12, color: "#f9fafb", fontSize: 14,
+  background: C.sand, border: `1px solid ${C.sandDark}`,
+  borderRadius: 12, color: C.bark, fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+};
+
+const selectStyle = {
+  ...inputStyle,
+  cursor: "pointer", appearance: "none",
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A5C47' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center",
 };
 
 const labelStyle = {
-  fontSize: 11, color: "#6b7280", marginBottom: 6,
-  letterSpacing: 0.5, fontWeight: 600, display: "block",
+  fontSize: 11, color: C.barkLight, marginBottom: 6,
+  letterSpacing: 0.5, fontWeight: 500, display: "block",
+  textTransform: "uppercase",
 };
 
 export default function EditProfile() {
@@ -42,6 +48,7 @@ export default function EditProfile() {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
@@ -90,10 +97,8 @@ export default function EditProfile() {
     setSaving(true);
     setError("");
 
-    // Upload new photo if one was selected
     let finalAvatarUrl = avatarUrl;
     if (avatarFile) {
-      // Get a fresh session token — ensures storage gets the user's JWT, not the anon key
       const { data: { session: freshSession } } = await supabase.auth.getSession();
       if (!freshSession?.access_token) {
         setError("Session expired. Please refresh the page and try again.");
@@ -121,7 +126,6 @@ export default function EditProfile() {
         setSaving(false);
         return;
       }
-      // Cache-bust so the browser shows the new photo immediately
       finalAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${path}?t=${Date.now()}`;
     }
 
@@ -154,54 +158,47 @@ export default function EditProfile() {
   if (loading) {
     return (
       <div style={{
-        height: "100vh", background: "#080b14",
+        height: "100vh", background: C.cream,
         display: "flex", alignItems: "center", justifyContent: "center",
-        color: "#4b5563", fontFamily: "'DM Sans', sans-serif",
+        color: C.barkLight, fontFamily: "'DM Sans', sans-serif",
       }}>Loading...</div>
     );
   }
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#080b14",
-      fontFamily: "'DM Sans', sans-serif", color: "#f3f4f6",
+      minHeight: "100vh", background: C.cream,
+      fontFamily: "'DM Sans', sans-serif", color: C.bark,
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
         * { box-sizing: border-box; }
-        input::placeholder, textarea::placeholder { color: #4b5563; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: #eab308 !important; }
-        select option { background: #0f1623; color: #f9fafb; }
+        input::placeholder, textarea::placeholder { color: ${C.barkLight}; opacity: 0.5; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: ${C.terracotta} !important; }
+        select option { background: ${C.warmWhite}; color: ${C.bark}; }
       `}</style>
 
       {/* Header */}
       <div style={{
         position: "sticky", top: 0, zIndex: 10,
         height: 64, padding: "0 20px",
-        background: "rgba(8,11,20,0.95)", backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: C.warmWhite,
+        borderBottom: `1px solid ${C.sandDark}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <button
-          onClick={() => navigate("/app")}
-          style={{
-            background: "transparent", border: "none",
-            color: "#9ca3af", fontSize: 20, cursor: "pointer", padding: 4,
-          }}
-        >‹</button>
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 700, color: "#f9fafb" }}>
+        <button onClick={() => navigate("/app")} style={{
+          background: "transparent", border: "none",
+          color: C.barkLight, fontSize: 20, cursor: "pointer", padding: 4,
+        }}>‹</button>
+        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark }}>
           Edit Profile
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            background: "#eab308", border: "none", borderRadius: 20,
-            padding: "8px 18px", color: "#080b14",
-            fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
-            opacity: saving ? 0.7 : 1,
-          }}
-        >{saving ? "Saving..." : "Save"}</button>
+        <button onClick={handleSave} disabled={saving} style={{
+          background: C.terracotta, border: "none", borderRadius: 100,
+          padding: "8px 18px", color: C.cream,
+          fontSize: 13, fontWeight: 500, cursor: saving ? "not-allowed" : "pointer",
+          opacity: saving ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif",
+        }}>{saving ? "Saving..." : "Save"}</button>
       </div>
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 20px 80px" }}>
@@ -210,20 +207,17 @@ export default function EditProfile() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 36 }}>
           <div style={{ position: "relative" }}>
             {avatarPreview ? (
-              <img
-                src={avatarPreview}
-                style={{
-                  width: 96, height: 96, borderRadius: "50%", objectFit: "cover",
-                  border: "2px solid rgba(234,179,8,0.35)",
-                }}
-              />
+              <img src={avatarPreview} style={{
+                width: 96, height: 96, borderRadius: "50%", objectFit: "cover",
+                border: `2px solid ${C.sandDark}`,
+              }} />
             ) : (
               <div style={{
                 width: 96, height: 96, borderRadius: "50%",
-                background: "rgba(234,179,8,0.1)", border: "2px solid rgba(234,179,8,0.3)",
+                background: C.sand, border: `2px solid ${C.sandDark}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
-                fontSize: 30, color: "#eab308",
+                fontFamily: "'Fraunces', serif", fontWeight: 600,
+                fontSize: 30, color: C.terracotta,
               }}>
                 {fullName ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
               </div>
@@ -231,42 +225,34 @@ export default function EditProfile() {
             <label style={{
               position: "absolute", bottom: 0, right: 0,
               width: 30, height: 30, borderRadius: "50%",
-              background: "#eab308", cursor: "pointer",
+              background: C.terracotta, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 15, border: "2px solid #080b14",
+              fontSize: 14, border: `2px solid ${C.cream}`,
             }}>
               📷
               <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: "none" }} />
             </label>
           </div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 10 }}>
+          <div style={{ fontSize: 12, color: C.barkLight, marginTop: 10 }}>
             {avatarFile ? "Photo ready to save" : "Tap 📷 to add a photo"}
           </div>
         </div>
 
         {/* Basic Info */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 700, color: "#f9fafb", marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 20 }}>
             About you
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>YOUR NAME</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              style={inputStyle}
-            />
+            <label style={labelStyle}>Your name</label>
+            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} style={inputStyle} />
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>NEIGHBORHOOD</label>
-            <select
-              value={neighborhood}
-              onChange={(e) => setNeighborhood(e.target.value)}
-              style={{ ...selectStyle, color: neighborhood ? "#f9fafb" : "#4b5563" }}
-            >
+            <label style={labelStyle}>Neighborhood</label>
+            <select value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
+              style={{ ...selectStyle, color: neighborhood ? C.bark : C.barkLight }}>
               <option value="" disabled>Select your neighborhood</option>
               {Object.entries(NEIGHBORHOODS).map(([borough, hoods]) => (
                 <optgroup key={borough} label={`— ${borough} —`}>
@@ -279,49 +265,31 @@ export default function EditProfile() {
           </div>
 
           <div>
-            <label style={labelStyle}>BIO <span style={{ color: "#374151" }}>(optional)</span></label>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={3}
+            <label style={labelStyle}>Bio <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
               placeholder="Tell people a bit about yourself..."
-              style={{
-                ...inputStyle,
-                resize: "none", fontFamily: "'DM Sans', sans-serif",
-              }}
-            />
+              style={{ ...inputStyle, resize: "none" }} />
           </div>
         </div>
 
         {/* Offering */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 700, color: "#f9fafb", marginBottom: 6 }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
             What you offer
           </div>
-          <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>Pick one skill or hobby you'd love to share.</div>
-          <SkillPicker
-            mode="single"
-            skills={SKILLS}
-            value={offering}
-            onChange={setOffering}
-          />
+          <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>Pick one skill or hobby you'd love to share.</div>
+          <SkillPicker mode="single" skills={SKILLS} value={offering} onChange={setOffering} />
         </div>
 
         {/* Seeking */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 700, color: "#f9fafb", marginBottom: 6 }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
             What you want to learn
           </div>
-          <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>Select one or more skills you're curious about.</div>
-          <SkillPicker
-            mode="multi"
-            skills={SKILLS}
-            value={seeking}
-            onChange={toggleSeeking}
-            exclude={offering?.label}
-          />
+          <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>Select one or more skills you're curious about.</div>
+          <SkillPicker mode="multi" skills={SKILLS} value={seeking} onChange={toggleSeeking} exclude={offering?.label} />
           {seeking.length > 0 && (
-            <div style={{ fontSize: 12, color: "#eab308", marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: C.clay, marginTop: 12 }}>
               {seeking.length} selected: {seeking.join(", ")}
             </div>
           )}
@@ -329,23 +297,20 @@ export default function EditProfile() {
 
         {error && (
           <div style={{
-            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+            background: "rgba(212,113,74,0.08)", border: `1px solid rgba(212,113,74,0.25)`,
             borderRadius: 12, padding: "12px 16px",
-            color: "#f87171", fontSize: 13, marginBottom: 16,
+            color: C.terracotta, fontSize: 13, marginBottom: 16,
           }}>{error}</div>
         )}
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            width: "100%", padding: "16px", background: "#eab308",
-            border: "none", borderRadius: 14, color: "#080b14",
-            fontSize: 15, fontWeight: 700,
-            cursor: saving ? "not-allowed" : "pointer",
-            opacity: saving ? 0.7 : 1,
-          }}
-        >{saving ? "Saving..." : "Save Changes"}</button>
+        <button onClick={handleSave} disabled={saving} style={{
+          width: "100%", padding: "14px", background: C.terracotta,
+          border: "none", borderRadius: 100, color: C.cream,
+          fontSize: 15, fontWeight: 500,
+          cursor: saving ? "not-allowed" : "pointer",
+          opacity: saving ? 0.7 : 1,
+          fontFamily: "'DM Sans', sans-serif",
+        }}>{saving ? "Saving..." : "Save Changes"}</button>
       </div>
     </div>
   );
