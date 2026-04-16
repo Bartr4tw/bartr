@@ -262,24 +262,53 @@ export default function BartrApp({ profile }) {
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
 
+  const authHeaders = {
+    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+  };
+
+  // Fetch profiles excluding already-swiped users
   useEffect(() => {
     if (!profile?.id) return;
     fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=neq.${profile.id}&select=*`,
-      {
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-      }
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&select=swiped_id`,
+      { headers: authHeaders }
     )
       .then((r) => r.json())
-      .then((rows) => {
+      .then(async (swipes) => {
+        const swipedIds = (swipes || []).map((s) => s.swiped_id);
+        let url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=neq.${profile.id}&select=*`;
+        if (swipedIds.length > 0) {
+          url += `&id=not.in.(${swipedIds.join(",")})`;
+        }
+        const rows = await fetch(url, { headers: authHeaders }).then((r) => r.json());
         setProfiles((rows || []).map(transformProfile));
         setProfilesLoading(false);
       })
       .catch(() => setProfilesLoading(false));
   }, [profile?.id]);
+
+  // Load persisted matches from DB
+  useEffect(() => {
+    if (!profile?.id) return;
+    fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?or=(user_a.eq.${profile.id},user_b.eq.${profile.id})&select=*`,
+      { headers: authHeaders }
+    )
+      .then((r) => r.json())
+      .then(async (matchRows) => {
+        if (!matchRows?.length) return;
+        const otherIds = matchRows.map((m) =>
+          m.user_a === profile.id ? m.user_b : m.user_a
+        );
+        const profileRows = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=in.(${otherIds.join(",")})&select=*`,
+          { headers: authHeaders }
+        ).then((r) => r.json());
+        setMatches((profileRows || []).map(transformProfile));
+      });
+  }, [profile?.id]);
+
   const width = useWindowWidth();
   const isMobile = width < 768;
   const HEADER_HEIGHT = 64;
@@ -288,17 +317,45 @@ export default function BartrApp({ profile }) {
     await supabase.auth.signOut();
   };
 
-  const handleSwipe = (direction) => {
+  const handleSwipe = async (direction) => {
     const current = profiles[0];
-    if (direction === "right") {
-      setMatches(m => [current, ...m]);
-      setShowMatch(current);
-      setTimeout(() => setShowMatch(null), 2400);
-    }
+    if (!current) return;
+
+    // Update UI immediately
     setLastAction(direction);
-    setSeenCount(c => c + 1);
-    setProfiles(p => p.slice(1));
+    setSeenCount((c) => c + 1);
+    setProfiles((p) => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
+
+    // Record swipe in DB
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
+      method: "POST",
+      headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ swiper_id: profile.id, swiped_id: current.id, direction }),
+    });
+
+    if (direction === "right") {
+      // Check if other user already swiped right on current user
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${current.id}&swiped_id=eq.${profile.id}&direction=eq.right`,
+        { headers: authHeaders }
+      );
+      const rows = await res.json();
+
+      if (rows?.length > 0) {
+        // Mutual match — save to matches table
+        const user_a = profile.id < current.id ? profile.id : current.id;
+        const user_b = profile.id < current.id ? current.id : profile.id;
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
+          method: "POST",
+          headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ user_a, user_b }),
+        });
+        setMatches((m) => [current, ...m]);
+        setShowMatch(current);
+        setTimeout(() => setShowMatch(null), 2400);
+      }
+    }
   };
 
   return (
