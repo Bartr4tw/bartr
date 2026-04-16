@@ -89,7 +89,7 @@ function useWindowWidth() {
   return width;
 }
 
-function SwipeCard({ profile, onSwipe, isMobile }) {
+function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
   const [drag, setDrag] = useState({ x: 0, dragging: false, startX: 0 });
 
   const handleMouseDown = (e) => setDrag({ x: 0, dragging: true, startX: e.clientX });
@@ -200,7 +200,7 @@ function SwipeCard({ profile, onSwipe, isMobile }) {
             <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>WANTS TO LEARN</div>
             <div style={{ display: "flex", gap: 8 }}>
               {profile.seeking.map((s, i) => {
-                const isMatch = YOUR_PROFILE.seeking.includes(s);
+                const isMatch = yourProfile.seeking.includes(s);
                 return (
                   <div key={s} style={{
                     flex: 1, borderRadius: 12, padding: "12px 6px", textAlign: "center",
@@ -262,7 +262,7 @@ function SwipeCard({ profile, onSwipe, isMobile }) {
   );
 }
 
-function MatchCard({ profile }) {
+function MatchCard({ profile, yourProfile }) {
   return (
     <div style={{
       background: "#0f1623", borderRadius: 16, padding: "16px",
@@ -282,7 +282,7 @@ function MatchCard({ profile }) {
           {profile.name}
         </div>
         <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-          {profile.offeringIcon} {profile.offering} <span style={{ color: "#eab308" }}>↔</span> {YOUR_PROFILE.offeringIcon} {YOUR_PROFILE.offering}
+          {profile.offeringIcon} {profile.offering} <span style={{ color: "#eab308" }}>↔</span> {yourProfile.offeringIcon} {yourProfile.offering}
         </div>
       </div>
       <button style={{
@@ -420,7 +420,7 @@ export default function BartrApp({ profile }) {
                       }} />
                     )}
                     <div style={{ position: "absolute", inset: 0 }}>
-                      <SwipeCard profile={profiles[0]} onSwipe={handleSwipe} isMobile={isMobile} />
+                      <SwipeCard profile={profiles[0]} yourProfile={YOUR_PROFILE} onSwipe={handleSwipe} isMobile={isMobile} />
                     </div>
                   </div>
 
@@ -571,7 +571,7 @@ export default function BartrApp({ profile }) {
                     {matches.length} MUTUAL MATCH{matches.length !== 1 ? "ES" : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {matches.map(m => <MatchCard key={m.id} profile={m} />)}
+                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} />)}
                   </div>
                 </>
               )}
