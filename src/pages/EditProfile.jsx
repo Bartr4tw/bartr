@@ -46,11 +46,13 @@ export default function EditProfile() {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
       setCurrentUser(session.user);
+      setAccessToken(session.access_token);
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
@@ -103,7 +105,7 @@ export default function EditProfile() {
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": avatarFile.type,
             "x-upsert": "true",
           },
