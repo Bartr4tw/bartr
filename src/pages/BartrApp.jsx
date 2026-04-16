@@ -18,6 +18,7 @@ function transformProfile(row) {
     avatar: row.full_name
       ? row.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
       : "?",
+    avatarUrl: row.avatar_url || null,
     offering: row.offering,
     offeringIcon: row.offering_icon,
     offeringDesc: row.bio,
@@ -25,6 +26,28 @@ function transformProfile(row) {
     seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || ""),
     tags: [],
   };
+}
+
+function Avatar({ url, initials, size, fontSize, border }) {
+  const shared = {
+    width: size, height: size, borderRadius: "50%", flexShrink: 0,
+  };
+  if (url) return (
+    <img src={url} style={{
+      ...shared, objectFit: "cover",
+      border: border ?? "2px solid rgba(234,179,8,0.3)",
+    }} />
+  );
+  return (
+    <div style={{
+      ...shared,
+      background: "rgba(234,179,8,0.1)",
+      border: border ?? "2px solid rgba(234,179,8,0.3)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
+      fontSize, color: "#eab308",
+    }}>{initials}</div>
+  );
 }
 
 const TABS = [
@@ -124,14 +147,7 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
           }} />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <div style={{
-                width: 68, height: 68, borderRadius: "50%",
-                background: "rgba(234,179,8,0.1)",
-                border: "2px solid rgba(234,179,8,0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
-                fontSize: 22, color: "#eab308", flexShrink: 0,
-              }}>{profile.avatar}</div>
+              <Avatar url={profile.avatarUrl} initials={profile.avatar} size={68} fontSize={22} />
               <div>
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 700, color: "#f9fafb" }}>
                   {profile.name}{profile.age ? `, ${profile.age}` : ""}
@@ -227,14 +243,7 @@ function MatchCard({ profile, yourProfile }) {
       border: "1px solid rgba(255,255,255,0.06)",
       display: "flex", alignItems: "center", gap: 14,
     }}>
-      <div style={{
-        width: 50, height: 50, borderRadius: "50%",
-        background: "rgba(234,179,8,0.1)",
-        border: "1px solid rgba(234,179,8,0.2)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
-        fontSize: 15, color: "#eab308", flexShrink: 0,
-      }}>{profile.avatar}</div>
+      <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border="1px solid rgba(234,179,8,0.2)" />
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, color: "#f9fafb", fontSize: 16 }}>
           {profile.name}
@@ -262,6 +271,7 @@ export default function BartrApp({ profile }) {
     avatar: profile?.full_name
       ? profile.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
       : "?",
+    avatarUrl: profile?.avatar_url || null,
     location: profile?.location || "",
     offering: profile?.offering || "",
     offeringIcon: profile?.offering_icon || "📊",
@@ -538,14 +548,7 @@ export default function BartrApp({ profile }) {
                     padding: "16px", borderBottom: "1px solid rgba(234,179,8,0.08)",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: "50%",
-                        background: "rgba(234,179,8,0.1)",
-                        border: "2px solid rgba(234,179,8,0.3)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontFamily: "'Cormorant Garamond', serif", fontWeight: 800,
-                        fontSize: 16, color: "#eab308",
-                      }}>{YOUR_PROFILE.avatar}</div>
+                      <Avatar url={YOUR_PROFILE.avatarUrl} initials={YOUR_PROFILE.avatar} size={44} fontSize={16} />
                       <div>
                         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.name}</div>
                         <div style={{ fontSize: 11, color: "#6b7280" }}>📍 {YOUR_PROFILE.location}</div>
@@ -588,14 +591,7 @@ export default function BartrApp({ profile }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {matches.slice(0, 5).map(m => (
                         <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{
-                            width: 34, height: 34, borderRadius: "50%",
-                            background: "rgba(234,179,8,0.1)",
-                            border: "1px solid rgba(234,179,8,0.2)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
-                            fontSize: 11, color: "#eab308",
-                          }}>{m.avatar}</div>
+                          <Avatar url={m.avatarUrl} initials={m.avatar} size={34} fontSize={11} border="1px solid rgba(234,179,8,0.2)" />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 12, fontWeight: 600, color: "#f9fafb" }}>{m.name}</div>
                             <div style={{ fontSize: 10, color: "#6b7280" }}>{m.offeringIcon} {m.offering}</div>
@@ -653,12 +649,7 @@ export default function BartrApp({ profile }) {
                     background: "radial-gradient(circle, rgba(234,179,8,0.06), transparent 70%)",
                   }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{
-                      width: 72, height: 72, borderRadius: "50%",
-                      background: "rgba(234,179,8,0.1)", border: "2px solid rgba(234,179,8,0.35)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontFamily: "'Cormorant Garamond', serif", fontWeight: 800, fontSize: 24, color: "#eab308",
-                    }}>{YOUR_PROFILE.avatar}</div>
+                    <Avatar url={YOUR_PROFILE.avatarUrl} initials={YOUR_PROFILE.avatar} size={72} fontSize={24} border="2px solid rgba(234,179,8,0.35)" />
                     <div>
                       <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.name}</div>
                       <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>📍 {YOUR_PROFILE.location}</div>

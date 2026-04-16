@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase.js";
 
+const authHeaders = {
+  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+};
+
 export default function Auth() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -17,6 +23,7 @@ export default function Auth() {
 
     if (mode === "signup") {
       if (!fullName) { setError("Please enter your name."); return; }
+      if (!inviteCode.trim()) { setError("Please enter your invite code."); return; }
       if (password !== confirmPassword) { setError("Passwords don't match."); return; }
       if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     }
@@ -24,6 +31,18 @@ export default function Auth() {
     setLoading(true);
 
     if (mode === "signup") {
+      // Verify invite code before creating account
+      const codeRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/invite_codes?code=eq.${encodeURIComponent(inviteCode.trim())}`,
+        { headers: authHeaders }
+      );
+      const codes = await codeRes.json();
+      if (!Array.isArray(codes) || codes.length === 0) {
+        setError("Invalid invite code. Ask a friend for theirs and try again.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -120,6 +139,26 @@ export default function Auth() {
                 placeholder="Your name"
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
+                style={{
+                  width: "100%", padding: "12px 16px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 12, color: "#f9fafb", fontSize: 14,
+                  transition: "border-color 0.2s",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Invite code — signup only */}
+          {mode === "signup" && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>INVITE CODE</div>
+              <input
+                type="text"
+                placeholder="Enter your invite code"
+                value={inviteCode}
+                onChange={e => setInviteCode(e.target.value)}
                 style={{
                   width: "100%", padding: "12px 16px",
                   background: "rgba(255,255,255,0.04)",

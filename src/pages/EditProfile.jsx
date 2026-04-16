@@ -26,6 +26,11 @@ const labelStyle = {
   letterSpacing: 0.5, fontWeight: 600, display: "block",
 };
 
+const authHeaders = {
+  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+};
+
 export default function EditProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -38,6 +43,9 @@ export default function EditProfile() {
   const [bio, setBio] = useState("");
   const [offering, setOffering] = useState(null);
   const [seeking, setSeeking] = useState([]);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -46,12 +54,7 @@ export default function EditProfile() {
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
-        {
-          headers: {
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-        }
+        { headers: authHeaders }
       );
       const rows = await res.json();
       const p = rows[0];
@@ -59,13 +62,22 @@ export default function EditProfile() {
         setFullName(p.full_name || "");
         setNeighborhood(p.location || "");
         setBio(p.bio || "");
-        const offeringSkill = SKILLS.find((s) => s.label === p.offering) || null;
-        setOffering(offeringSkill);
+        setAvatarUrl(p.avatar_url || null);
+        setAvatarPreview(p.avatar_url || null);
+        const offeringSkill = SKILLS.find((s) => s.label === p.offering) || { icon: "✨", label: p.offering };
+        setOffering(p.offering ? offeringSkill : null);
         setSeeking(p.seeking ? p.seeking.split(",").map((s) => s.trim()).filter(Boolean) : []);
       }
       setLoading(false);
     });
   }, []);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
 
   const toggleSeeking = (label) => {
     setSeeking((prev) =>
@@ -82,16 +94,36 @@ export default function EditProfile() {
     setSaving(true);
     setError("");
 
+    // Upload new photo if one was selected
+    let finalAvatarUrl = avatarUrl;
+    if (avatarFile) {
+      const ext = avatarFile.name.split(".").pop().toLowerCase();
+      const uploadRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/avatars/${currentUser.id}.${ext}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            "Content-Type": avatarFile.type,
+            "x-upsert": "true",
+          },
+          body: avatarFile,
+        }
+      );
+      if (!uploadRes.ok) {
+        setError("Photo upload failed. Please try again.");
+        setSaving(false);
+        return;
+      }
+      // Cache-bust so the browser shows the new photo immediately
+      finalAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${currentUser.id}.${ext}?t=${Date.now()}`;
+    }
+
     const res = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${currentUser.id}`,
       {
         method: "PATCH",
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
+        headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
         body: JSON.stringify({
           full_name: fullName.trim(),
           location: neighborhood,
@@ -99,6 +131,7 @@ export default function EditProfile() {
           offering: offering.label,
           offering_icon: offering.icon,
           seeking: seeking.join(","),
+          avatar_url: finalAvatarUrl,
         }),
       }
     );
@@ -109,7 +142,6 @@ export default function EditProfile() {
       return;
     }
 
-    // Full reload so main.jsx re-fetches the updated profile via checkProfile
     window.location.href = "/app";
   };
 
@@ -167,6 +199,44 @@ export default function EditProfile() {
       </div>
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 20px 80px" }}>
+
+        {/* Photo */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 36 }}>
+          <div style={{ position: "relative" }}>
+            {avatarPreview ? (
+              <img
+                src={avatarPreview}
+                style={{
+                  width: 96, height: 96, borderRadius: "50%", objectFit: "cover",
+                  border: "2px solid rgba(234,179,8,0.35)",
+                }}
+              />
+            ) : (
+              <div style={{
+                width: 96, height: 96, borderRadius: "50%",
+                background: "rgba(234,179,8,0.1)", border: "2px solid rgba(234,179,8,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "'Cormorant Garamond', serif", fontWeight: 700,
+                fontSize: 30, color: "#eab308",
+              }}>
+                {fullName ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
+              </div>
+            )}
+            <label style={{
+              position: "absolute", bottom: 0, right: 0,
+              width: 30, height: 30, borderRadius: "50%",
+              background: "#eab308", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 15, border: "2px solid #080b14",
+            }}>
+              📷
+              <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: "none" }} />
+            </label>
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 10 }}>
+            {avatarFile ? "Photo ready to save" : "Tap 📷 to add a photo"}
+          </div>
+        </div>
 
         {/* Basic Info */}
         <div style={{ marginBottom: 32 }}>
