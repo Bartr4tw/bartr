@@ -39,7 +39,7 @@ export default function Chat() {
   useEffect(() => {
     if (!currentUser || !userId) return;
     fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?or=(and(sender_id.eq.${currentUser.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUser.id}))&order=created_at.asc`,
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?sender_id=in.(${currentUser.id},${userId})&receiver_id=in.(${currentUser.id},${userId})&order=created_at.asc`,
       {
         headers: {
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
