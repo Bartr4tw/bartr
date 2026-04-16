@@ -173,20 +173,12 @@ export default function BartrLanding() {
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           <a href="#how" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none", fontWeight: 500 }}>How it works</a>
           <a href="#mission" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none", fontWeight: 500 }}>Mission</a>
-          <a href="/app" style={{ textDecoration: "none" }}>
-            <button style={{
-              background: "transparent",
-              border: "1px solid rgba(234,179,8,0.4)",
-              borderRadius: 24, padding: "8px 20px", fontSize: 13, fontWeight: 600,
-              color: "#eab308", cursor: "pointer", marginRight: 8,
-            }}>Try the app</button>
-          </a>
           <a href="/auth" style={{ textDecoration: "none" }}>
             <button style={{
               background: "#eab308", border: "none", borderRadius: 24,
               padding: "8px 20px", fontSize: 13, fontWeight: 600,
               color: "#080b14", cursor: "pointer",
-            }}>Request invite</button>
+            }}>Get started</button>
           </a>
         </div>
       </nav>
@@ -245,7 +237,7 @@ export default function BartrLanding() {
           </p>
 
           <div style={{
-            display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap",
+            display: "flex", justifyContent: "center",
             marginBottom: 64,
             opacity: heroVisible ? 1 : 0,
             transition: "opacity 0.8s ease 0.5s",
@@ -253,22 +245,11 @@ export default function BartrLanding() {
             <a href="/auth" style={{ textDecoration: "none" }}>
               <button style={{
                 background: "#eab308", border: "none",
-                borderRadius: 40, padding: "14px 32px",
+                borderRadius: 40, padding: "14px 36px",
                 fontSize: 15, fontWeight: 700, color: "#080b14",
                 cursor: "pointer", letterSpacing: 0.3,
               }}>
-                Request an invite →
-              </button>
-            </a>
-            <a href="/app" style={{ textDecoration: "none" }}>
-              <button style={{
-                background: "rgba(234,179,8,0.1)",
-                border: "1px solid rgba(234,179,8,0.3)",
-                borderRadius: 40, padding: "14px 32px",
-                fontSize: 15, fontWeight: 600, color: "#eab308",
-                cursor: "pointer", letterSpacing: 0.3,
-              }}>
-                ⚡ Try the app
+                Get started →
               </button>
             </a>
           </div>
@@ -382,21 +363,13 @@ export default function BartrLanding() {
         <p style={{ fontSize: 16, color: "#9ca3af", marginBottom: 40 }}>
           Invite-only. New York City. Have an invite code? You're in.
         </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <a href="/auth" style={{ textDecoration: "none" }}>
             <button style={{
               background: "#eab308", border: "none",
               borderRadius: 40, padding: "14px 36px",
               fontSize: 15, fontWeight: 700, color: "#080b14", cursor: "pointer",
-            }}>Request an invite →</button>
-          </a>
-          <a href="/app" style={{ textDecoration: "none" }}>
-            <button style={{
-              background: "transparent",
-              border: "1px solid rgba(234,179,8,0.3)",
-              borderRadius: 40, padding: "14px 28px",
-              fontSize: 14, fontWeight: 600, color: "#eab308", cursor: "pointer",
-            }}>⚡ Try the app</button>
+            }}>Get started →</button>
           </a>
         </div>
       </section>
