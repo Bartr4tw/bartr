@@ -267,19 +267,29 @@ export default function BartrApp({ profile }) {
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
 
-  // Fetch profiles excluding already-swiped users
+  // Fetch profiles excluding anyone already swiped on or matched with
   useEffect(() => {
     if (!profile?.id) return;
-    fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&select=swiped_id`,
-      { headers: authHeaders }
-    )
-      .then((r) => r.json())
-      .then(async (swipes) => {
+    Promise.all([
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&select=swiped_id`,
+        { headers: authHeaders }
+      ).then((r) => r.json()),
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?or=(user_a.eq.${profile.id},user_b.eq.${profile.id})&select=user_a,user_b`,
+        { headers: authHeaders }
+      ).then((r) => r.json()),
+    ])
+      .then(async ([swipes, matches]) => {
         const swipedIds = (swipes || []).map((s) => s.swiped_id);
+        const matchedIds = (matches || []).map((m) =>
+          m.user_a === profile.id ? m.user_b : m.user_a
+        );
+        const excludeIds = [...new Set([...swipedIds, ...matchedIds])];
+
         let url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=neq.${profile.id}&select=*`;
-        if (swipedIds.length > 0) {
-          url += `&id=not.in.(${swipedIds.join(",")})`;
+        if (excludeIds.length > 0) {
+          url += `&id=not.in.(${excludeIds.join(",")})`;
         }
         const rows = await fetch(url, { headers: authHeaders }).then((r) => r.json());
         setProfiles((rows || []).map(transformProfile));
