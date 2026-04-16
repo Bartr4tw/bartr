@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
+import { SKILLS } from "../lib/skillsData.js";
 
 const authHeaders = {
   apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -253,12 +254,17 @@ function MatchCard({ profile, yourProfile }) {
 }
 
 export default function BartrApp({ profile }) {
+  const seekingLabels = profile?.seeking ? profile.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const YOUR_PROFILE = {
     name: profile?.full_name || "You",
+    avatar: profile?.full_name
+      ? profile.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+      : "?",
+    location: profile?.location || "",
     offering: profile?.offering || "",
     offeringIcon: profile?.offering_icon || "📊",
-    seeking: profile?.seeking ? profile.seeking.split(",") : [],
-    seekingIcons: [],
+    seeking: seekingLabels,
+    seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || ""),
   };
   const [activeTab, setActiveTab] = useState(0);
   const [profiles, setProfiles] = useState([]);
@@ -537,10 +543,10 @@ export default function BartrApp({ profile }) {
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontFamily: "'Cormorant Garamond', serif", fontWeight: 800,
                         fontSize: 16, color: "#eab308",
-                      }}>N</div>
+                      }}>{YOUR_PROFILE.avatar}</div>
                       <div>
                         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.name}</div>
-                        <div style={{ fontSize: 11, color: "#6b7280" }}>New York, NY</div>
+                        <div style={{ fontSize: 11, color: "#6b7280" }}>📍 {YOUR_PROFILE.location}</div>
                       </div>
                     </div>
                   </div>
@@ -650,10 +656,10 @@ export default function BartrApp({ profile }) {
                       background: "rgba(234,179,8,0.1)", border: "2px solid rgba(234,179,8,0.35)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontFamily: "'Cormorant Garamond', serif", fontWeight: 800, fontSize: 24, color: "#eab308",
-                    }}>N</div>
+                    }}>{YOUR_PROFILE.avatar}</div>
                     <div>
                       <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.name}</div>
-                      <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>📍 New York, NY</div>
+                      <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>📍 {YOUR_PROFILE.location}</div>
                       <div style={{
                         display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
                         background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)",
@@ -676,7 +682,7 @@ export default function BartrApp({ profile }) {
                       <span style={{ fontSize: 30 }}>{YOUR_PROFILE.offeringIcon}</span>
                       <div>
                         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.offering}</div>
-                        <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Mid-level · Available weekends</div>
+                        <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{YOUR_PROFILE.location}</div>
                       </div>
                     </div>
                   </div>
@@ -699,7 +705,7 @@ export default function BartrApp({ profile }) {
                     paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.05)",
                     display: "flex", justifyContent: "space-between",
                   }}>
-                    {[["Matches", matches.length], ["Seen", seenCount], ["Skills", 1]].map(([label, val]) => (
+                    {[["Matches", matches.length], ["Seen", seenCount], ["Skills", YOUR_PROFILE.seeking.length]].map(([label, val]) => (
                       <div key={label} style={{ textAlign: "center" }}>
                         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 700, color: "#eab308" }}>{val}</div>
                         <div style={{ fontSize: 11, color: "#4b5563", letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
