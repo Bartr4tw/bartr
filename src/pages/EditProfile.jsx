@@ -96,13 +96,30 @@ export default function EditProfile() {
     // Upload new photo if one was selected
     let finalAvatarUrl = avatarUrl;
     if (avatarFile) {
+      // Get a fresh session token — ensures storage gets the user's JWT, not the anon key
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      if (!freshSession?.access_token) {
+        setError("Session expired. Please refresh the page and try again.");
+        setSaving(false);
+        return;
+      }
       const ext = avatarFile.name.split(".").pop().toLowerCase();
       const path = `${currentUser.id}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, avatarFile, { contentType: avatarFile.type, upsert: true });
-      if (uploadError) {
-        setError(`Photo upload failed: ${uploadError.message}`);
+      const uploadRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/avatars/${path}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${freshSession.access_token}`,
+            "Content-Type": avatarFile.type,
+            "x-upsert": "true",
+          },
+          body: avatarFile,
+        }
+      );
+      if (!uploadRes.ok) {
+        const msg = await uploadRes.text().catch(() => uploadRes.status);
+        setError(`Photo upload failed: ${msg}`);
         setSaving(false);
         return;
       }
