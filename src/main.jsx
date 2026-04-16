@@ -39,9 +39,8 @@ function Root() {
   }, []);
 
   const AppRoute = () => {
-    if (loading) return <Auth />;
     if (!session) return <Auth />;
-    if (!hasProfile) return <Onboarding user={session.user} onComplete={() => checkProfile(session.user.id)} />;
+    if (!hasProfile) return <Onboarding user={session.user} onComplete={() => { setHasProfile(true); checkProfile(session.user.id); }} />;
     return <BartrApp profile={profile} />;
   };
 
