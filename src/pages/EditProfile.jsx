@@ -46,13 +46,10 @@ export default function EditProfile() {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
-
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
       setCurrentUser(session.user);
-      setAccessToken(session.access_token);
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
@@ -100,25 +97,17 @@ export default function EditProfile() {
     let finalAvatarUrl = avatarUrl;
     if (avatarFile) {
       const ext = avatarFile.name.split(".").pop().toLowerCase();
-      const uploadRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/avatars/${currentUser.id}.${ext}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": avatarFile.type,
-            "x-upsert": "true",
-          },
-          body: avatarFile,
-        }
-      );
-      if (!uploadRes.ok) {
-        setError("Photo upload failed. Please try again.");
+      const path = `${currentUser.id}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, avatarFile, { contentType: avatarFile.type, upsert: true });
+      if (uploadError) {
+        setError(`Photo upload failed: ${uploadError.message}`);
         setSaving(false);
         return;
       }
       // Cache-bust so the browser shows the new photo immediately
-      finalAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${currentUser.id}.${ext}?t=${Date.now()}`;
+      finalAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${path}?t=${Date.now()}`;
     }
 
     const res = await fetch(
