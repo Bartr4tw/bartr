@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 import { NEIGHBORHOODS, SKILLS } from "../lib/skillsData.js";
+import SkillPicker from "../components/SkillPicker.jsx";
 
 const selectStyle = {
   width: "100%", padding: "12px 16px",
@@ -222,23 +223,12 @@ export default function EditProfile() {
             What you offer
           </div>
           <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>Pick one skill or hobby you'd love to share.</div>
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 10, maxHeight: 320, overflowY: "auto",
-          }}>
-            {SKILLS.map((skill) => (
-              <button key={skill.label} onClick={() => setOffering(skill)} style={{
-                padding: "12px 8px", borderRadius: 12, cursor: "pointer",
-                background: offering?.label === skill.label ? "rgba(234,179,8,0.12)" : "rgba(255,255,255,0.03)",
-                border: offering?.label === skill.label ? "1px solid rgba(234,179,8,0.4)" : "1px solid rgba(255,255,255,0.06)",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                transition: "all 0.15s",
-              }}>
-                <span style={{ fontSize: 24 }}>{skill.icon}</span>
-                <span style={{ fontSize: 11, color: offering?.label === skill.label ? "#eab308" : "#9ca3af", fontWeight: 600 }}>{skill.label}</span>
-              </button>
-            ))}
-          </div>
+          <SkillPicker
+            mode="single"
+            skills={SKILLS}
+            value={offering}
+            onChange={setOffering}
+          />
         </div>
 
         {/* Seeking */}
@@ -247,23 +237,13 @@ export default function EditProfile() {
             What you want to learn
           </div>
           <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>Select one or more skills you're curious about.</div>
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 10, maxHeight: 320, overflowY: "auto",
-          }}>
-            {SKILLS.filter((s) => s.label !== offering?.label).map((skill) => (
-              <button key={skill.label} onClick={() => toggleSeeking(skill.label)} style={{
-                padding: "12px 8px", borderRadius: 12, cursor: "pointer",
-                background: seeking.includes(skill.label) ? "rgba(234,179,8,0.12)" : "rgba(255,255,255,0.03)",
-                border: seeking.includes(skill.label) ? "1px solid rgba(234,179,8,0.4)" : "1px solid rgba(255,255,255,0.06)",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                transition: "all 0.15s",
-              }}>
-                <span style={{ fontSize: 24 }}>{skill.icon}</span>
-                <span style={{ fontSize: 11, color: seeking.includes(skill.label) ? "#eab308" : "#9ca3af", fontWeight: 600 }}>{skill.label}</span>
-              </button>
-            ))}
-          </div>
+          <SkillPicker
+            mode="multi"
+            skills={SKILLS}
+            value={seeking}
+            onChange={toggleSeeking}
+            exclude={offering?.label}
+          />
           {seeking.length > 0 && (
             <div style={{ fontSize: 12, color: "#eab308", marginTop: 12 }}>
               {seeking.length} selected: {seeking.join(", ")}
