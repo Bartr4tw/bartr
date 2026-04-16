@@ -73,14 +73,6 @@ const PROFILES = [
   },
 ];
 
-const YOUR_PROFILE = {
-  name: "Neal",
-  offering: "Data Analysis",
-  offeringIcon: "📊",
-  seeking: ["Cooking", "Guitar", "Photography"],
-  seekingIcons: ["🍳", "🎸", "📷"],
-};
-
 const TABS = [
   { label: "Discover", icon: "⚡" },
   { label: "Matches", icon: "↔" },
@@ -303,7 +295,14 @@ function MatchCard({ profile }) {
   );
 }
 
-export default function BartrApp() {
+export default function BartrApp({ profile }) {
+  const YOUR_PROFILE = {
+    name: profile?.full_name || "You",
+    offering: profile?.offering || "",
+    offeringIcon: profile?.offering_icon || "📊",
+    seeking: profile?.seeking ? profile.seeking.split(",") : [],
+    seekingIcons: [],
+  };
   const [activeTab, setActiveTab] = useState(0);
   const [profiles, setProfiles] = useState(PROFILES);
   const [matches, setMatches] = useState([]);

@@ -12,14 +12,16 @@ function Root() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasProfile, setHasProfile] = useState(false);
+  const [profile, setProfile] = useState(null);
 
   const checkProfile = async (userId) => {
     const { data } = await supabase
       .from("profiles")
-      .select("id")
+      .select("*")
       .eq("id", userId)
       .maybeSingle();
     setHasProfile(!!data);
+    setProfile(data);
   };
 
   useEffect(() => {
@@ -39,8 +41,8 @@ function Root() {
   const AppRoute = () => {
     if (loading) return null;
     if (!session) return <Auth />;
-    if (!hasProfile) return <Onboarding user={session.user} onComplete={() => setHasProfile(true)} />;
-    return <BartrApp />;
+    if (!hasProfile) return <Onboarding user={session.user} onComplete={() => checkProfile(session.user.id)} />;
+    return <BartrApp profile={profile} />;
   };
 
   return (
