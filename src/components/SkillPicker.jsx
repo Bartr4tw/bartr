@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { getAuthHeaders } from "../lib/supabase.js";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const authHeaders = {
+// Anon headers are fine for reading public custom skills list
+const anonHeaders = {
   apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
 };
@@ -16,7 +18,7 @@ function loadCustomSkills() {
   if (_pending) return _pending;
   _pending = fetch(
     `${SUPABASE_URL}/rest/v1/custom_skills?select=label,icon&order=created_at.asc`,
-    { headers: authHeaders }
+    { headers: anonHeaders }
   )
     .then((r) => r.json())
     .then((rows) => {
@@ -113,6 +115,7 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
     setAdding(true);
     const newSkill = { icon: "✨", label: trimmed };
 
+    const authHeaders = await getAuthHeaders();
     const res = await fetch(`${SUPABASE_URL}/rest/v1/custom_skills`, {
       method: "POST",
       headers: {

@@ -26,14 +26,10 @@ const labelStyle = {
   letterSpacing: 0.5, fontWeight: 600, display: "block",
 };
 
-const authHeaders = {
-  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-};
-
 export default function EditProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
+  const [sessionToken, setSessionToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -50,10 +46,11 @@ export default function EditProfile() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
       setCurrentUser(session.user);
+      setSessionToken(session.access_token);
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
-        { headers: authHeaders }
+        { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}` } }
       );
       const rows = await res.json();
       const p = rows[0];
@@ -132,7 +129,7 @@ export default function EditProfile() {
       `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${currentUser.id}`,
       {
         method: "PATCH",
-        headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+        headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json", Prefer: "return=minimal" },
         body: JSON.stringify({
           full_name: fullName.trim(),
           location: neighborhood,

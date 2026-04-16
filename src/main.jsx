@@ -15,7 +15,7 @@ function AppRoute({ loading, session, hasProfile, profile, onComplete }) {
   if (loading) return null;
   if (!session) return <Auth />;
   if (!hasProfile) return <Onboarding user={session.user} onComplete={onComplete} />;
-  return <BartrApp profile={profile} />;
+  return <BartrApp profile={profile} session={session} />;
 }
 
 function Root() {
@@ -24,14 +24,14 @@ function Root() {
   const [hasProfile, setHasProfile] = useState(false);
   const [profile, setProfile] = useState(null);
 
-  const checkProfile = async (userId) => {
+  const checkProfile = async (userId, accessToken) => {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
         {
           headers: {
             "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            "Authorization": `Bearer ${accessToken}`,
           },
         }
       );
@@ -48,13 +48,13 @@ function Root() {
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         setSession(session);
-        if (session) await checkProfile(session.user.id);
+        if (session) await checkProfile(session.user.id, session.access_token);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
     supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        await checkProfile(session.user.id);
+        await checkProfile(session.user.id, session.access_token);
         setSession(session);
       } else {
         setSession(null);
@@ -67,7 +67,7 @@ function Root() {
 
   const handleOnboardingComplete = () => {
     setHasProfile(true);
-    checkProfile(session.user.id);
+    checkProfile(session.user.id, session.access_token);
   };
 
   return (
