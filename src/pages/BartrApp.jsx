@@ -286,12 +286,14 @@ function MatchCard({ profile, yourProfile }) {
           {profile.offeringIcon} {profile.offering} <span style={{ color: "#eab308" }}>↔</span> {yourProfile.offeringIcon} {yourProfile.offering}
         </div>
       </div>
-      <button style={{
-        background: "rgba(234,179,8,0.1)",
-        border: "1px solid rgba(234,179,8,0.2)",
-        borderRadius: 20, padding: "7px 16px",
-        color: "#eab308", fontSize: 12, fontWeight: 600, cursor: "pointer",
-      }}>Message</button>
+      <button
+        onClick={() => window.location.href = `/chat/${profile.id}`}
+        style={{
+          background: "rgba(234,179,8,0.1)",
+          border: "1px solid rgba(234,179,8,0.2)",
+          borderRadius: 20, padding: "7px 16px",
+          color: "#eab308", fontSize: 12, fontWeight: 600, cursor: "pointer",
+        }}>Message</button>
     </div>
   );
 }
