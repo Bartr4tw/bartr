@@ -110,6 +110,7 @@ export default function EditProfile() {
         {
           method: "POST",
           headers: {
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
             Authorization: `Bearer ${freshSession.access_token}`,
             "Content-Type": avatarFile.type,
             "x-upsert": "true",
