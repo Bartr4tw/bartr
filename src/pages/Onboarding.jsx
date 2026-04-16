@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../lib/supabase.js";
 import { NEIGHBORHOODS, SKILLS } from "../lib/skillsData.js";
 import SkillPicker from "../components/SkillPicker.jsx";
 
@@ -24,12 +25,14 @@ export default function Onboarding({ user, onComplete }) {
     setLoading(true);
     setError("");
 
+    const { data: { session } } = await supabase.auth.getSession();
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${session?.access_token}`,
         "Prefer": "return=minimal"
       },
       body: JSON.stringify({

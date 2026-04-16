@@ -3,10 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 import { SKILLS } from "../lib/skillsData.js";
 
-const authHeaders = {
-  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-};
 
 function transformProfile(row) {
   const seekingLabels = row.seeking ? row.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [];
@@ -264,7 +260,11 @@ function MatchCard({ profile, yourProfile }) {
   );
 }
 
-export default function BartrApp({ profile }) {
+export default function BartrApp({ profile, session }) {
+  const authHeaders = {
+    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${session?.access_token}`,
+  };
   const seekingLabels = profile?.seeking ? profile.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const YOUR_PROFILE = {
     name: profile?.full_name || "You",

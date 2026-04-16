@@ -6,6 +6,7 @@ export default function Chat() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
+  const [sessionToken, setSessionToken] = useState(null);
   const [otherProfile, setOtherProfile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -17,34 +18,35 @@ export default function Chat() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
       setCurrentUser(session.user);
+      setSessionToken(session.access_token);
     });
   }, []);
 
   // Fetch other user's profile
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !sessionToken) return;
     fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
       {
         headers: {
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${sessionToken}`,
         },
       }
     )
       .then((r) => r.json())
       .then((rows) => setOtherProfile(rows[0] || null));
-  }, [userId]);
+  }, [userId, sessionToken]);
 
   // Fetch existing messages
   useEffect(() => {
-    if (!currentUser || !userId) return;
+    if (!currentUser || !userId || !sessionToken) return;
     fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?sender_id=in.(${currentUser.id},${userId})&receiver_id=in.(${currentUser.id},${userId})&order=created_at.asc`,
       {
         headers: {
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${sessionToken}`,
         },
       }
     )
@@ -53,7 +55,7 @@ export default function Chat() {
         setMessages(rows || []);
         setLoading(false);
       });
-  }, [currentUser, userId]);
+  }, [currentUser, userId, sessionToken]);
 
   // Realtime subscription for incoming messages
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function Chat() {
       method: "POST",
       headers: {
         apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${sessionToken}`,
         "Content-Type": "application/json",
         Prefer: "return=minimal",
       },
