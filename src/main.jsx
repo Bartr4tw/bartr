@@ -23,20 +23,21 @@ function Root() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session) await checkProfile(session.user.id);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        setSession(session);
+        if (session) await checkProfile(session.user.id);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
     supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session) await checkProfile(session.user.id);
     });
   }, []);
 
-  if (loading) return <div style={{color:"white",padding:20}}>Loading...</div>;
-
   const AppRoute = () => {
+    if (loading) return null;
     if (!session) return <Auth />;
     if (!hasProfile) return <Onboarding user={session.user} onComplete={() => setHasProfile(true)} />;
     return <BartrApp />;
