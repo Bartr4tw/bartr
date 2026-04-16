@@ -64,9 +64,9 @@ export default function Auth() {
       if (error) setError(error.message);
       else setMessage("Check your email for a password reset link!");
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      console.log("login result:", data, error);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
+      else window.location.href = "/app";
     }
 
     setLoading(false);
