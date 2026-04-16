@@ -361,7 +361,7 @@ export default function BartrApp({ profile }) {
           </a>
           {!isMobile && (
             <div style={{ display: "flex" }}>
-              {TABS.map((tab, i) => (
+              {TABS.filter(tab => tab.label !== "Profile").map((tab, i) => (
                 <button key={tab.label} onClick={() => setActiveTab(i)} style={{
                   padding: "0 18px", height: HEADER_HEIGHT,
                   background: "transparent", border: "none",
@@ -383,15 +383,16 @@ export default function BartrApp({ profile }) {
             </div>
           )}
         </div>
-        <div style={{
+        <button onClick={() => setActiveTab(2)} style={{
           display: "flex", alignItems: "center", gap: 8,
-          background: "rgba(234,179,8,0.08)",
-          border: "1px solid rgba(234,179,8,0.2)",
+          background: activeTab === 2 ? "rgba(234,179,8,0.12)" : "rgba(255,255,255,0.04)",
+          border: activeTab === 2 ? "1px solid rgba(234,179,8,0.3)" : "1px solid rgba(255,255,255,0.08)",
           borderRadius: 24, padding: "6px 14px",
+          color: activeTab === 2 ? "#eab308" : "#9ca3af",
+          fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
         }}>
-          <span style={{ fontSize: 14 }}>{YOUR_PROFILE.offeringIcon}</span>
-          <span style={{ fontSize: 12, color: "#eab308", fontWeight: 600 }}>{YOUR_PROFILE.offering}</span>
-        </div>
+          ◉ Profile
+        </button>
       </div>
 
       {/* Body */}
