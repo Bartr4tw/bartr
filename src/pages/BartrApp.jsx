@@ -1,78 +1,22 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase.js";
 
-const PROFILES = [
-  {
-    id: 1,
-    name: "Maya Chen",
-    age: 28,
-    location: "Brooklyn, NY",
-    avatar: "MC",
-    offering: "Guitar Lessons",
-    offeringIcon: "🎸",
-    offeringLevel: "Advanced",
-    offeringDesc: "10 years playing, can teach acoustic & electric. Fingerpicking, chord theory, songwriting. Happy to work with complete beginners or intermediate players looking to level up.",
-    seeking: ["Cooking", "Photography", "Language"],
-    seekingIcons: ["🍳", "📷", "🗣️"],
-    tags: ["Creative", "Patient", "Flexible Hours"],
-  },
-  {
-    id: 2,
-    name: "Jordan Reyes",
-    age: 33,
-    location: "Manhattan, NY",
-    avatar: "JR",
-    offering: "Personal Training",
-    offeringIcon: "🏋️",
-    offeringLevel: "Certified",
-    offeringDesc: "NASM certified, 6 years experience. Strength, HIIT, mobility. Custom programming tailored to your goals — whether that's losing weight, building muscle, or just moving better.",
-    seeking: ["Photography", "Web Dev", "Cooking"],
-    seekingIcons: ["📷", "💻", "🍳"],
-    tags: ["Morning Person", "Results-Driven", "Outdoors"],
-  },
-  {
-    id: 3,
-    name: "Priya Sharma",
-    age: 26,
-    location: "Astoria, NY",
-    avatar: "PS",
-    offering: "Indian Cooking",
-    offeringIcon: "🍛",
-    offeringLevel: "Expert",
-    offeringDesc: "Authentic regional Indian cuisine passed down through generations. Spice blending, vegetarian & non-veg, meal prep, and the stories behind the dishes.",
-    seeking: ["Yoga", "Guitar", "Photography"],
-    seekingIcons: ["🧘", "🎸", "📷"],
-    tags: ["Foodie", "Weekends", "Cultural Exchange"],
-  },
-  {
-    id: 4,
-    name: "Sam Torres",
-    age: 30,
-    location: "Williamsburg, NY",
-    avatar: "ST",
-    offering: "Photography",
-    offeringIcon: "📷",
-    offeringLevel: "Professional",
-    offeringDesc: "Street, portrait, events. Lightroom editing, composition, lighting on a budget. I'll teach you to see the shot before you take it.",
-    seeking: ["Music", "Fitness", "Language"],
-    seekingIcons: ["🎵", "🏋️", "🗣️"],
-    tags: ["Portfolio Building", "Film & Digital", "Evenings OK"],
-  },
-  {
-    id: 5,
-    name: "Alex Kim",
-    age: 24,
-    location: "LIC, NY",
-    avatar: "AK",
-    offering: "Web Development",
-    offeringIcon: "💻",
-    offeringLevel: "Mid-level",
-    offeringDesc: "React, Node, design basics. Can help build your project from scratch or teach fundamentals. Great for anyone who wants to understand how the web actually works.",
-    seeking: ["Cooking", "Music", "Fitness"],
-    seekingIcons: ["🍳", "🎵", "🏋️"],
-    tags: ["Remote Friendly", "Project-Based", "Coffee Chats"],
-  },
-];
+function transformProfile(row) {
+  return {
+    id: row.id,
+    name: row.full_name,
+    location: row.location,
+    avatar: row.full_name
+      ? row.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+      : "?",
+    offering: row.offering,
+    offeringIcon: row.offering_icon,
+    offeringDesc: row.bio,
+    seeking: row.seeking ? row.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [],
+    seekingIcons: [],
+    tags: [],
+  };
+}
 
 const TABS = [
   { label: "Discover", icon: "⚡" },
@@ -181,21 +125,23 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
               }}>{profile.avatar}</div>
               <div>
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 700, color: "#f9fafb" }}>
-                  {profile.name}, {profile.age}
+                  {profile.name}{profile.age ? `, ${profile.age}` : ""}
                 </div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>📍 {profile.location}</div>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 28 }}>
-              {profile.tags.map(t => (
-                <span key={t} style={{
-                  background: "rgba(234,179,8,0.08)",
-                  border: "1px solid rgba(234,179,8,0.15)",
-                  borderRadius: 20, padding: "3px 10px",
-                  fontSize: 11, color: "#9ca3af", fontWeight: 600,
-                }}>{t}</span>
-              ))}
-            </div>
+            {profile.tags?.length > 0 && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 28 }}>
+                {profile.tags.map(t => (
+                  <span key={t} style={{
+                    background: "rgba(234,179,8,0.08)",
+                    border: "1px solid rgba(234,179,8,0.15)",
+                    borderRadius: 20, padding: "3px 10px",
+                    fontSize: 11, color: "#9ca3af", fontWeight: 600,
+                  }}>{t}</span>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>WANTS TO LEARN</div>
@@ -208,7 +154,7 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
                     background: isMatch ? "rgba(234,179,8,0.08)" : "rgba(255,255,255,0.03)",
                     border: isMatch ? "1px solid rgba(234,179,8,0.25)" : "1px solid rgba(255,255,255,0.06)",
                   }}>
-                    <div style={{ fontSize: 20 }}>{profile.seekingIcons[i]}</div>
+                    {profile.seekingIcons?.[i] && <div style={{ fontSize: 20 }}>{profile.seekingIcons[i]}</div>}
                     <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>{s}</div>
                     {isMatch && <div style={{ fontSize: 9, color: "#eab308", marginTop: 3, fontWeight: 600 }}>You offer!</div>}
                   </div>
@@ -237,10 +183,12 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 700, color: "#f9fafb" }}>
                   {profile.offering}
                 </div>
-                <span style={{
-                  background: "rgba(234,179,8,0.1)", borderRadius: 20,
-                  padding: "3px 12px", fontSize: 12, color: "#eab308", fontWeight: 600,
-                }}>{profile.offeringLevel}</span>
+                {profile.offeringLevel && (
+                  <span style={{
+                    background: "rgba(234,179,8,0.1)", borderRadius: 20,
+                    padding: "3px 12px", fontSize: 12, color: "#eab308", fontWeight: 600,
+                  }}>{profile.offeringLevel}</span>
+                )}
               </div>
             </div>
             <p style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1.8 }}>{profile.offeringDesc}</p>
@@ -307,10 +255,31 @@ export default function BartrApp({ profile }) {
     seekingIcons: [],
   };
   const [activeTab, setActiveTab] = useState(0);
-  const [profiles, setProfiles] = useState(PROFILES);
+  const [profiles, setProfiles] = useState([]);
+  const [profilesLoading, setProfilesLoading] = useState(true);
+  const [seenCount, setSeenCount] = useState(0);
   const [matches, setMatches] = useState([]);
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=neq.${profile.id}&select=*`,
+      {
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+      }
+    )
+      .then((r) => r.json())
+      .then((rows) => {
+        setProfiles((rows || []).map(transformProfile));
+        setProfilesLoading(false);
+      })
+      .catch(() => setProfilesLoading(false));
+  }, [profile?.id]);
   const width = useWindowWidth();
   const isMobile = width < 768;
   const HEADER_HEIGHT = 64;
@@ -327,6 +296,7 @@ export default function BartrApp({ profile }) {
       setTimeout(() => setShowMatch(null), 2400);
     }
     setLastAction(direction);
+    setSeenCount(c => c + 1);
     setProfiles(p => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
   };
@@ -462,9 +432,13 @@ export default function BartrApp({ profile }) {
                 </>
               ) : (
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>✨</div>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>You've seen everyone</div>
-                  <div style={{ color: "#4b5563", fontSize: 14 }}>Check back soon for new skill traders</div>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>{profilesLoading ? "⏳" : "✨"}</div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
+                    {profilesLoading ? "Finding skill traders..." : "You've seen everyone"}
+                  </div>
+                  <div style={{ color: "#4b5563", fontSize: 14 }}>
+                    {profilesLoading ? "" : "Check back soon for new skill traders"}
+                  </div>
                 </div>
               )}
             </div>
@@ -656,7 +630,7 @@ export default function BartrApp({ profile }) {
                     paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.05)",
                     display: "flex", justifyContent: "space-between",
                   }}>
-                    {[["Matches", matches.length], ["Seen", PROFILES.length - profiles.length], ["Skills", 1]].map(([label, val]) => (
+                    {[["Matches", matches.length], ["Seen", seenCount], ["Skills", 1]].map(([label, val]) => (
                       <div key={label} style={{ textAlign: "center" }}>
                         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 700, color: "#eab308" }}>{val}</div>
                         <div style={{ fontSize: 11, color: "#4b5563", letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
