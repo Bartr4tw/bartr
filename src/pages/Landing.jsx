@@ -19,6 +19,21 @@ const SKILLS = [
   { icon: "🏊", label: "Swimming" },
 ];
 
+const MARQUEE_SKILLS = [
+  { icon: "🍕", label: "Italian cooking" },
+  { icon: "📷", label: "Film photography" },
+  { icon: "🐍", label: "Python scripting" },
+  { icon: "🎹", label: "Piano basics" },
+  { icon: "🌿", label: "Urban gardening" },
+  { icon: "✍️", label: "Copywriting" },
+  { icon: "🎨", label: "Watercolor painting" },
+  { icon: "🧘", label: "Yoga & breathwork" },
+  { icon: "🚲", label: "Bike repair" },
+  { icon: "📊", label: "Excel & data viz" },
+  { icon: "🎤", label: "Public speaking" },
+  { icon: "🇪🇸", label: "Spanish tutoring" },
+];
+
 const STORIES = [
   { from: "🎸", fromLabel: "Guitar", to: "📷", toLabel: "Photography", names: "Maya & Sam" },
   { from: "🍳", fromLabel: "Cooking", to: "💻", toLabel: "Web Dev", names: "Priya & Alex" },
@@ -92,15 +107,13 @@ function StoryCard({ story, delay }) {
         <div style={{
           width: 56, height: 56, borderRadius: "50%",
           background: C.sand, border: `1.5px solid ${C.sandDark}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 24,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
         }}>{story.from}</div>
         <div style={{ color: C.terracotta, fontSize: 18 }}>↔</div>
         <div style={{
           width: 56, height: 56, borderRadius: "50%",
           background: C.sand, border: `1.5px solid ${C.sandDark}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 24,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
         }}>{story.to}</div>
       </div>
       <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 6 }}>{story.names}</div>
@@ -126,6 +139,8 @@ export default function BartrLanding() {
     { icon: "🤝", title: "Make the swap", desc: "Set up a session, exchange knowledge, and grow together. No money involved — just two people leveling each other up." },
   ];
 
+  const marqueeSkills = [...MARQUEE_SKILLS, ...MARQUEE_SKILLS];
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -143,6 +158,10 @@ export default function BartrLanding() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-8px); }
         }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
         .pill-hover:hover > div {
           background: ${C.sand} !important;
           border-color: ${C.clay} !important;
@@ -153,6 +172,7 @@ export default function BartrLanding() {
           transform: translateY(-4px) !important;
           box-shadow: 0 12px 32px rgba(74,55,40,0.09) !important;
         }
+        .marquee-track:hover { animation-play-state: paused; }
       `}</style>
 
       {/* Nav */}
@@ -182,10 +202,7 @@ export default function BartrLanding() {
 
       {/* Hero */}
       <section style={{
-        minHeight: "100vh",
-        display: "flex", flexDirection: "column",
-        alignItems: "flex-start", justifyContent: "center",
-        padding: "100px 64px 80px",
+        padding: "80px 64px 64px",
         position: "relative", overflow: "hidden",
       }}>
         {/* Blobs */}
@@ -208,82 +225,151 @@ export default function BartrLanding() {
           opacity: heroVisible ? 1 : 0,
           transform: heroVisible ? "translateY(0)" : "translateY(24px)",
           transition: "all 0.8s cubic-bezier(.34,1.56,.64,1)",
-          maxWidth: 760, position: "relative",
+          position: "relative",
+          display: "grid", gridTemplateColumns: "1fr auto",
+          alignItems: "center", gap: 64,
+          maxWidth: 1100,
         }}>
-          {/* Badge */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: C.sand, border: `1px solid ${C.sandDark}`,
-            borderRadius: 100, padding: "6px 16px", marginBottom: 32,
-          }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.moss, animation: "float 2s ease-in-out infinite" }} />
-            <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500, letterSpacing: 1, textTransform: "uppercase" }}>Invite-only · New York</span>
+          {/* Left — text content */}
+          <div>
+            {/* Badge */}
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: C.sand, border: `1px solid ${C.sandDark}`,
+              borderRadius: 100, padding: "6px 16px", marginBottom: 32,
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.moss, animation: "float 2s ease-in-out infinite" }} />
+              <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500, letterSpacing: 1, textTransform: "uppercase" }}>Invite-only · New York</span>
+            </div>
+
+            {/* Staggered headline */}
+            <h1 style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: 28 }}>
+              <span style={{
+                display: "block",
+                fontFamily: "'Fraunces', serif",
+                fontWeight: 600, letterSpacing: -2, lineHeight: 1.08,
+                fontSize: "clamp(40px, 6vw, 80px)",
+                color: C.bark,
+              }}>Teach what you know.</span>
+              <span style={{
+                display: "block",
+                fontFamily: "'Fraunces', serif",
+                fontWeight: 600, letterSpacing: -2, lineHeight: 1.08,
+                fontSize: "clamp(40px, 6vw, 80px)",
+                color: C.terracotta, fontStyle: "italic",
+                marginLeft: "2.6ch",
+              }}>Learn what you don't.</span>
+            </h1>
+
+            <p style={{
+              fontSize: 16, color: C.barkLight, lineHeight: 1.7,
+              maxWidth: 420, marginBottom: 36,
+              opacity: heroVisible ? 1 : 0,
+              transition: "opacity 0.8s ease 0.3s",
+            }}>
+              Bartr connects people who have skills to share with people hungry to learn them.
+              No money. No algorithms. Just humans teaching humans.
+            </p>
+
+            {/* CTA */}
+            <div style={{
+              opacity: heroVisible ? 1 : 0,
+              transition: "opacity 0.8s ease 0.5s",
+              marginBottom: 48,
+            }}>
+              <a href="/auth" style={{ textDecoration: "none" }}>
+                <button style={{
+                  background: C.terracotta, border: "none",
+                  borderRadius: 100, padding: "13px 32px",
+                  fontSize: 15, fontWeight: 500, color: C.cream,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}>Get started →</button>
+              </a>
+            </div>
+
+            {/* Skill pills */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, maxWidth: 520 }}>
+              {SKILLS.map((s, i) => (
+                <div key={s.label} className="pill-hover">
+                  <AnimatedSkillPill icon={s.icon} label={s.label} delay={600 + i * 60} />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Staggered headline */}
-          <h1 style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: 28 }}>
-            <span style={{
-              display: "block",
-              fontFamily: "'Fraunces', serif",
-              fontWeight: 600, letterSpacing: -2, lineHeight: 1.08,
-              fontSize: "clamp(48px, 8vw, 88px)",
-              color: C.bark,
+          {/* Right — card stack */}
+          <div style={{ position: "relative", width: 260, height: 360, flexShrink: 0 }}>
+            {/* Back cards */}
+            <div style={{
+              position: "absolute", width: 248, borderRadius: 22,
+              padding: "1.5rem", background: C.sand,
+              border: `1.5px solid ${C.sandDark}`,
+              boxShadow: `0 8px 28px rgba(74,55,40,0.1)`,
+              top: 18, left: 18, transform: "rotate(5deg)", zIndex: 1,
+              height: 300,
+            }} />
+            <div style={{
+              position: "absolute", width: 248, borderRadius: 22,
+              padding: "1.5rem", background: "#EEE5D2",
+              border: `1.5px solid ${C.sandDark}`,
+              boxShadow: `0 8px 28px rgba(74,55,40,0.1)`,
+              top: 9, left: 9, transform: "rotate(2deg)", zIndex: 2,
+              height: 300,
+            }} />
+            {/* Front card */}
+            <div style={{
+              position: "absolute", width: 248, borderRadius: 22,
+              padding: "1.5rem", background: C.warmWhite,
+              border: `1.5px solid ${C.sandDark}`,
+              boxShadow: `0 8px 28px rgba(74,55,40,0.12)`,
+              top: 0, left: 0, transform: "rotate(-1deg)", zIndex: 3,
             }}>
-              Teach what you know.
-            </span>
-            <span style={{
-              display: "block",
-              fontFamily: "'Fraunces', serif",
-              fontWeight: 600, letterSpacing: -2, lineHeight: 1.08,
-              fontSize: "clamp(48px, 8vw, 88px)",
-              color: C.terracotta, fontStyle: "italic",
-              marginLeft: "2.6ch",
-            }}>
-              Learn what you don't.
-            </span>
-          </h1>
-
-          <p style={{
-            fontSize: 18, color: C.barkLight, lineHeight: 1.7,
-            maxWidth: 480, marginBottom: 40,
-            opacity: heroVisible ? 1 : 0,
-            transition: "opacity 0.8s ease 0.3s",
-          }}>
-            Bartr connects people who have skills to share with people hungry to learn them.
-            No money. No algorithms. Just humans teaching humans.
-          </p>
-
-          {/* CTA */}
-          <div style={{
-            opacity: heroVisible ? 1 : 0,
-            transition: "opacity 0.8s ease 0.5s",
-            marginBottom: 64,
-          }}>
-            <a href="/auth" style={{ textDecoration: "none" }}>
-              <button style={{
-                background: C.terracotta, border: "none",
-                borderRadius: 100, padding: "14px 36px",
-                fontSize: 15, fontWeight: 500, color: C.cream,
-                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-              }}>
-                Get started →
-              </button>
-            </a>
-          </div>
-
-          {/* Skill pills */}
-          <div style={{
-            display: "flex", flexWrap: "wrap", gap: 10,
-            maxWidth: 580,
-          }}>
-            {SKILLS.map((s, i) => (
-              <div key={s.label} className="pill-hover">
-                <AnimatedSkillPill icon={s.icon} label={s.label} delay={600 + i * 60} />
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🎸</div>
+              <div style={{ fontSize: 10, fontWeight: 500, textTransform: "uppercase", letterSpacing: 1, color: C.clay, marginBottom: 4 }}>Offering</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>Guitar lessons</div>
+              <div style={{ fontSize: 12, color: C.barkLight, lineHeight: 1.5, marginBottom: 16 }}>
+                Acoustic fingerpicking, chord theory, and songwriting basics. Beginner-friendly.
               </div>
-            ))}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: "50%",
+                  background: C.sandDark,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 600, color: C.clayDeep,
+                }}>MA</div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: C.bark }}>Marcus A.</div>
+                  <div style={{ fontSize: 11, color: C.barkLight }}>Brooklyn, NY</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: "#B0A090" }}>← Pass</span>
+                <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: C.moss }}>Match →</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Stats strip */}
+      <div style={{
+        background: C.sand,
+        borderTop: `1px solid ${C.sandDark}`,
+        borderBottom: `1px solid ${C.sandDark}`,
+        padding: "28px 64px",
+        display: "flex", justifyContent: "center", gap: "6rem",
+      }}>
+        {[
+          { num: "4,200+", label: "Skills listed" },
+          { num: "1,800+", label: "Active traders" },
+          { num: "92%",    label: "Match satisfaction" },
+        ].map(({ num, label }) => (
+          <div key={label} style={{ textAlign: "center" }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: C.clayDeep }}>{num}</div>
+            <div style={{ fontSize: 13, color: C.barkLight, marginTop: 2 }}>{label}</div>
+          </div>
+        ))}
+      </div>
 
       {/* How it works */}
       <section id="how" style={{ padding: "100px 64px", maxWidth: 1000, margin: "0 auto" }}>
@@ -329,8 +415,37 @@ export default function BartrLanding() {
         </div>
       </section>
 
+      {/* Marquee */}
+      <div style={{
+        background: C.sand,
+        borderTop: `1px solid ${C.sandDark}`,
+        borderBottom: `1px solid ${C.sandDark}`,
+        padding: "20px 0",
+        overflow: "hidden",
+      }}>
+        <div className="marquee-track" style={{
+          display: "flex", gap: 12,
+          animation: "marquee 24s linear infinite",
+          width: "max-content",
+        }}>
+          {marqueeSkills.map((s, i) => (
+            <div key={i} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: C.warmWhite,
+              border: `1.5px solid ${C.sandDark}`,
+              borderRadius: 100, padding: "8px 18px",
+              whiteSpace: "nowrap",
+              fontSize: 13, color: C.bark,
+            }}>
+              <span style={{ fontSize: 16 }}>{s.icon}</span>
+              {s.label}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Match stories */}
-      <section style={{ padding: "40px 64px 100px", maxWidth: 900, margin: "0 auto" }}>
+      <section style={{ padding: "80px 64px 80px", maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 48 }}>
           <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 12, textTransform: "uppercase" }}>Real trades</div>
           <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, color: C.bark, letterSpacing: -0.5 }}>
@@ -382,7 +497,6 @@ export default function BartrLanding() {
           position: "relative", overflow: "hidden",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 40,
         }}>
-          {/* Blobs */}
           <div style={{
             position: "absolute", width: 320, height: 320,
             background: C.clayDeep, opacity: 0.3,
