@@ -98,8 +98,6 @@ function StoryCard({ story, delay }) {
 }
 
 export default function BartrLanding() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
   const [heroVisible, setHeroVisible] = useState(false);
   const [howRef, howInView] = useInView();
   const [manifestoRef, manifestoInView] = useInView();
@@ -107,12 +105,6 @@ export default function BartrLanding() {
   useEffect(() => {
     setTimeout(() => setHeroVisible(true), 100);
   }, []);
-
-  const handleSubmit = () => {
-    if (email.includes("@")) {
-      setSubmitted(true);
-    }
-  };
 
   const steps = [
     { icon: "🎬", title: "Show your skill", desc: "Upload a short video of you doing what you do best. No credentials needed — just show up." },
@@ -162,8 +154,6 @@ export default function BartrLanding() {
           transform: translateY(-2px);
           transition: all 0.2s !important;
         }
-        input::placeholder { color: #4b5563; }
-        input:focus { outline: none; border-color: #eab308 !important; }
       `}</style>
 
       <div className="grain" />
@@ -191,11 +181,13 @@ export default function BartrLanding() {
               color: "#eab308", cursor: "pointer", marginRight: 8,
             }}>Try the app</button>
           </a>
-          <button style={{
-            background: "#eab308", border: "none", borderRadius: 24,
-            padding: "8px 20px", fontSize: 13, fontWeight: 600,
-            color: "#080b14", cursor: "pointer",
-          }}>Join waitlist</button>
+          <a href="/auth" style={{ textDecoration: "none" }}>
+            <button style={{
+              background: "#eab308", border: "none", borderRadius: 24,
+              padding: "8px 20px", fontSize: 13, fontWeight: 600,
+              color: "#080b14", cursor: "pointer",
+            }}>Request invite</button>
+          </a>
         </div>
       </nav>
 
@@ -253,50 +245,21 @@ export default function BartrLanding() {
           </p>
 
           <div style={{
-            display: "flex", gap: 12, justifyContent: "center",
-            maxWidth: 420, margin: "0 auto 64px",
+            display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap",
+            marginBottom: 64,
             opacity: heroVisible ? 1 : 0,
             transition: "opacity 0.8s ease 0.5s",
           }}>
-            {!submitted ? (
-              <>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                  style={{
-                    flex: 1, padding: "14px 20px",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRight: "none",
-                    borderRadius: "12px 0 0 12px",
-                    color: "#f3f4f6", fontSize: 14,
-                    transition: "border-color 0.2s",
-                  }}
-                />
-                <button onClick={handleSubmit} style={{
-                  background: "#eab308", border: "none",
-                  borderRadius: "0 12px 12px 0",
-                  padding: "14px 24px", fontSize: 14,
-                  fontWeight: 700, color: "#080b14", cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}>Join waitlist →</button>
-              </>
-            ) : (
-              <div style={{
-                flex: 1, padding: "14px 20px", textAlign: "center",
-                background: "rgba(234,179,8,0.1)",
-                border: "1px solid rgba(234,179,8,0.3)",
-                borderRadius: 12, color: "#eab308", fontSize: 14, fontWeight: 600,
+            <a href="/auth" style={{ textDecoration: "none" }}>
+              <button style={{
+                background: "#eab308", border: "none",
+                borderRadius: 40, padding: "14px 32px",
+                fontSize: 15, fontWeight: 700, color: "#080b14",
+                cursor: "pointer", letterSpacing: 0.3,
               }}>
-                ✓ You're on the list — we'll be in touch
-              </div>
-            )}
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
+                Request an invite →
+              </button>
+            </a>
             <a href="/app" style={{ textDecoration: "none" }}>
               <button style={{
                 background: "rgba(234,179,8,0.1)",
@@ -305,7 +268,7 @@ export default function BartrLanding() {
                 fontSize: 15, fontWeight: 600, color: "#eab308",
                 cursor: "pointer", letterSpacing: 0.3,
               }}>
-                ⚡ Try the app demo
+                ⚡ Try the app
               </button>
             </a>
           </div>
@@ -417,53 +380,25 @@ export default function BartrLanding() {
           <span style={{ color: "#eab308" }}>teach next?</span>
         </h2>
         <p style={{ fontSize: 16, color: "#9ca3af", marginBottom: 40 }}>
-          Join the waitlist. We're launching in New York first.
+          Invite-only. New York City. Have an invite code? You're in.
         </p>
-        <div style={{ display: "flex", gap: 0, maxWidth: 400, margin: "0 auto 24px" }}>
-          {!submitted ? (
-            <>
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                style={{
-                  flex: 1, padding: "16px 20px",
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRight: "none",
-                  borderRadius: "14px 0 0 14px",
-                  color: "#f3f4f6", fontSize: 14,
-                }}
-              />
-              <button onClick={handleSubmit} style={{
-                background: "#eab308", border: "none",
-                borderRadius: "0 14px 14px 0",
-                padding: "16px 28px", fontSize: 15,
-                fontWeight: 700, color: "#080b14", cursor: "pointer",
-              }}>→</button>
-            </>
-          ) : (
-            <div style={{
-              flex: 1, padding: "16px", textAlign: "center",
-              background: "rgba(234,179,8,0.1)",
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="/auth" style={{ textDecoration: "none" }}>
+            <button style={{
+              background: "#eab308", border: "none",
+              borderRadius: 40, padding: "14px 36px",
+              fontSize: 15, fontWeight: 700, color: "#080b14", cursor: "pointer",
+            }}>Request an invite →</button>
+          </a>
+          <a href="/app" style={{ textDecoration: "none" }}>
+            <button style={{
+              background: "transparent",
               border: "1px solid rgba(234,179,8,0.3)",
-              borderRadius: 14, color: "#eab308", fontWeight: 600,
-            }}>✓ You're on the list</div>
-          )}
+              borderRadius: 40, padding: "14px 28px",
+              fontSize: 14, fontWeight: 600, color: "#eab308", cursor: "pointer",
+            }}>⚡ Try the app</button>
+          </a>
         </div>
-        <a href="/app" style={{ textDecoration: "none" }}>
-          <button style={{
-            background: "transparent",
-            border: "1px solid rgba(234,179,8,0.3)",
-            borderRadius: 40, padding: "12px 28px",
-            fontSize: 14, fontWeight: 600, color: "#eab308",
-            cursor: "pointer",
-          }}>
-            ⚡ Or try the app demo first
-          </button>
-        </a>
       </section>
 
       {/* Footer */}
