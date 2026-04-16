@@ -6,6 +6,7 @@ import Landing from "./pages/Landing.jsx";
 import BartrApp from "./pages/BartrApp.jsx";
 import Auth from "./pages/Auth.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
+import Chat from "./pages/Chat.jsx";
 import "./index.css";
 
 function AppRoute({ loading, session, hasProfile, profile, onComplete }) {
@@ -81,6 +82,7 @@ function Root() {
           />
         } />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/chat/:userId" element={<Chat />} />
       </Routes>
     </BrowserRouter>
   );
