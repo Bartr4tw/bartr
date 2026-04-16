@@ -1,11 +1,11 @@
 import { StrictMode, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { supabase } from "./supabase.js";
-import App from "./App.jsx";
-import App2 from "./App2.jsx";
-import Auth from "./Auth.jsx";
-import Onboarding from "./Onboarding.jsx";
+import { supabase } from "./lib/supabase.js";
+import Landing from "./pages/Landing.jsx";
+import BartrApp from "./pages/BartrApp.jsx";
+import Auth from "./pages/Auth.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 import "./index.css";
 
 function Root() {
@@ -34,18 +34,18 @@ function Root() {
     });
   }, []);
 
-<div style={{color:"white",padding:20}}>Loading...</div>
+  if (loading) return <div style={{color:"white",padding:20}}>Loading...</div>;
 
   const AppRoute = () => {
     if (!session) return <Auth />;
     if (!hasProfile) return <Onboarding user={session.user} onComplete={() => setHasProfile(true)} />;
-    return <App2 />;
+    return <BartrApp />;
   };
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/app" element={<AppRoute />} />
         <Route path="/auth" element={<Auth />} />
       </Routes>
