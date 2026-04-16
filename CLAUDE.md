@@ -44,13 +44,19 @@ GitHub Actions secrets hold these for Vercel CI builds. Use the **legacy anon ke
 
 ```
 src/
-  lib/supabase.js       # Supabase client singleton
+  lib/
+    supabase.js         # Supabase client singleton
+    skillsData.js       # Shared SKILLS array and NEIGHBORHOODS object
+  components/
+    SkillPicker.jsx     # Reusable skill selector with search + custom skill support
   pages/
     Landing.jsx         # Public marketing/landing page
     BartrApp.jsx        # Main app UI (swipe interface, 3 tabs)
-    Auth.jsx            # Login / signup
+    Auth.jsx            # Login / signup / forgot password
     Onboarding.jsx      # 3-step new user setup
     Chat.jsx            # Real-time 1:1 messaging between matched users
+    EditProfile.jsx     # Edit profile page (name, neighborhood, bio, skills, photo)
+    ResetPassword.jsx   # Password reset landing page (handles Supabase recovery token)
   assets/               # Images
   main.jsx              # Routing + auth state management
   index.css             # Intentionally empty (cleared to fix style conflicts)
@@ -63,18 +69,20 @@ vercel.json             # Rewrites all routes to /index.html for React Router SP
 
 ## Routing & Auth Flow (`src/main.jsx`)
 
-`main.jsx` contains the top-level `Root` component that owns all auth state (`session`, `loading`, `hasProfile`, `profile`).
+`main.jsx` contains the top-level `Root` component that owns all auth state (`session`, `loading`, `hasProfile`, `profile`). `AppRoute` is defined outside `Root` to prevent remounting on every render.
 
-- `/` → `Landing` (public, renders immediately — no auth gate)
+- `/` → `Landing` (public)
 - `/auth` → `Auth` (public)
 - `/app` → `AppRoute` (protected):
   1. Loading → renders `null`
   2. No session → `Auth`
   3. Session, no profile row → `Onboarding`
   4. Session + profile → `BartrApp` (receives `profile` prop)
-- `/chat/:userId` → `Chat` (self-contained auth check via `supabase.auth.getSession()`)
+- `/chat/:userId` → `Chat` (self-contained auth check)
+- `/profile/edit` → `EditProfile` (self-contained auth check)
+- `/reset-password` → `ResetPassword` (handles Supabase recovery token from email link)
 
-`checkProfile` fetches the full `profiles` row (`select("*")`) and stores it in `profile` state, which gets passed down to `BartrApp`. The `onComplete` callback in `Onboarding` calls `checkProfile` directly so the profile is fetched immediately after onboarding without a page reload.
+`checkProfile` fetches the full `profiles` row and stores it in `profile` state, passed down to `BartrApp`. `onComplete` in `Onboarding` calls `checkProfile` directly so profile is fetched immediately after onboarding without a page reload.
 
 ## Database
 
@@ -93,7 +101,7 @@ vercel.json             # Rewrites all routes to /index.html for React Router SP
 | `offering_icon` | text | Emoji |
 | `seeking` | text | Comma-separated skill labels |
 | `bio` | text | |
-| `avatar_url` | text | |
+| `avatar_url` | text | Supabase Storage public URL |
 
 **Table: `swipes`**
 
@@ -128,25 +136,59 @@ Unique constraint on `(user_a, user_b)`. Created when mutual right swipes are de
 | `content` | text | |
 | `created_at` | timestamptz | |
 
-To enable live messaging, run once: `alter publication supabase_realtime add table messages;`
+Supabase Realtime is enabled on messages: `alter publication supabase_realtime add table messages;` (already run).
+
+**Table: `custom_skills`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `label` | text | Skill name — unique index on `lower(label)` to prevent case-insensitive duplicates |
+| `icon` | text | Always `✨` for custom skills |
+| `created_at` | timestamptz | |
+
+**Table: `invite_codes`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `code` | text | Primary key |
+| `created_at` | timestamptz | |
+
+Add new invite codes directly in the Supabase Table Editor. Codes are checked at signup before the account is created.
+
+## Storage
+
+**Bucket: `avatars`** — public bucket for profile photos.
+- Files stored as `{userId}.{ext}` at bucket root
+- Upload uses direct `fetch` to `/storage/v1/object/avatars/{path}` with both `apikey` and `Authorization: Bearer {session.access_token}` headers
+- Session token fetched fresh via `supabase.auth.getSession()` immediately before upload
+- `x-upsert: true` header allows re-uploading to replace existing photo
+- Public URL pattern: `{SUPABASE_URL}/storage/v1/object/public/avatars/{userId}.{ext}?t={timestamp}` (cache-busted)
+- RLS policies on `storage.objects`: INSERT and UPDATE policies scoped to `bucket_id = 'avatars'`
 
 ## Critical Workarounds
 
-- **Supabase JS client insert timeout** — the JS client hangs silently on inserts. All writes use direct `fetch` to the Supabase REST API (`/rest/v1/profiles`) instead of `supabase.from(...).insert(...)`.
+- **Supabase JS client insert timeout** — the JS client hangs silently on inserts. All DB writes use direct `fetch` to the Supabase REST API (`/rest/v1/...`) instead of `supabase.from(...).insert(...)`.
 - **Legacy anon key required** — the new publishable key format causes silent timeouts on DB operations. Use the original anon key from the Supabase dashboard.
-- **Supabase `getSession`** is wrapped in `.catch(() => {}).finally(() => setLoading(false))` — ensures the loading state always resolves even if Supabase errors (e.g., misconfigured env vars).
-- **Multi-tab testing** — Supabase stores sessions in `localStorage`, shared across all tabs in the same browser. Use an incognito window to test a second user simultaneously.
-- **`or` filter across different columns** — PostgREST's `?or=(user_a.eq.X,user_b.eq.X)` is unreliable. Always use two separate queries (one for each column) and merge results in JS.
-- **`Array.isArray()` guard on all fetch responses** — Supabase returns an error object (not an array) on failed queries. Always check `Array.isArray(rows)` before using `.length` or `.map()` to avoid silent failures.
-- **`keepalive: true` on swipe inserts** — ensures the swipe POST completes even if the user navigates away before the fetch resolves.
+- **Both `apikey` and `Authorization` headers required** — every fetch to Supabase (REST API and Storage) must include both `apikey: ANON_KEY` and `Authorization: Bearer TOKEN`. Missing either causes auth failures.
+- **Supabase `getSession`** wrapped in `.catch(() => {}).finally(() => setLoading(false))` — ensures loading state always resolves even if Supabase errors.
+- **Multi-tab testing** — Supabase stores sessions in `localStorage`, shared across all tabs. Use an incognito window to test a second user simultaneously.
+- **`or` filter across different columns** — PostgREST's `?or=(user_a.eq.X,user_b.eq.X)` is unreliable. Always use two separate queries (one per column) and merge in JS.
+- **`Array.isArray()` guard on all fetch responses** — Supabase returns an error object (not an array) on failed queries. Always check before `.length` or `.map()`.
+- **`keepalive: true` on swipe inserts** — ensures the swipe POST completes even if the user navigates away before it resolves.
+- **Storage session token** — use `supabase.auth.getSession()` to get a fresh `access_token` immediately before any storage upload. Do not rely on the Supabase JS storage client to inject auth automatically.
 
 ## Key Components
 
-- **`Landing.jsx`** — Purely presentational. Scroll-triggered animations via `IntersectionObserver`. Waitlist email form is UI-only (not connected to a mailing list yet). "Try the app" links to `/app`.
-- **`BartrApp.jsx`** — Three-tab app (Discover, Matches, Profile). Receives `profile` prop from `main.jsx`. Fetches real profiles from Supabase on mount, excluding the current user and anyone already swiped on or matched with. Swipe threshold: 100px desktop, 80px mobile. On right swipe, inserts to `swipes` table and checks for a mutual right swipe — if found, inserts to `matches` and shows the match overlay. Matches load from DB on mount so they persist across sessions. Profile tab has a Sign Out button. Desktop header shows Discover + Matches tabs on the left, Profile button top-right.
-- **`Auth.jsx`** — Email + password auth. Signup collects full name. Email confirmation required before login. On successful login redirects via `window.location.href = "/app"`. Supabase Site URL is set to `bartr-taupe.vercel.app`.
-- **`Onboarding.jsx`** — 3-step wizard: (1) name + NYC neighborhood + optional bio, (2) pick one offering from 24 options, (3) multi-select skills to learn (offering excluded). Saves via direct REST API fetch. NYC neighborhoods grouped by borough — Staten Island excluded intentionally.
-- **`Chat.jsx`** — Full-screen messaging page at `/chat/:userId`. Fetches message history on mount using `sender_id=in.(X,Y)&receiver_id=in.(X,Y)` filter. Subscribes to Supabase Realtime for live incoming messages (requires `alter publication supabase_realtime add table messages` to be run once). Optimistic UI for sent messages. Auto-growing textarea, Enter to send. Back button navigates to `/app`.
+- **`Landing.jsx`** — Purely presentational. Scroll-triggered animations via `IntersectionObserver`. Waitlist email form is UI-only (not connected to a mailing list). "Try the app" links to `/app`.
+- **`BartrApp.jsx`** — Three-tab app (Discover, Matches, Profile). Receives `profile` prop from `main.jsx`. Contains `transformProfile(row)` to map DB rows to card shape, and `Avatar` component for photo-with-initials-fallback display. Fetches profiles excluding swiped + matched users. Swipe threshold: 100px desktop, 80px mobile. Match detection uses two separate queries. Profile tab shows bio, offering, seeking icons, stats, Edit Profile button, Sign Out.
+- **`Auth.jsx`** — Email + password auth. Has three modes: `login`, `signup`, `forgot`. Signup requires an invite code (checked against `invite_codes` table before account creation). Forgot password calls `supabase.auth.resetPasswordForEmail` with `redirectTo: /reset-password`. Email confirmation required before login.
+- **`ResetPassword.jsx`** — Listens for `PASSWORD_RECOVERY` event via `supabase.auth.onAuthStateChange`, shows new password form, calls `supabase.auth.updateUser({ password })`, redirects to `/app` on success.
+- **`Onboarding.jsx`** — 3-step wizard: (1) name + NYC neighborhood + optional bio, (2) pick one offering, (3) multi-select skills to learn. Uses `SkillPicker` component. Saves via direct REST API fetch.
+- **`EditProfile.jsx`** — Standalone page. Photo upload at top (circular avatar + 📷 button). Saves photo to Supabase Storage, then PATCHes profile row. Full page reload on save (`window.location.href = "/app"`) so `checkProfile` in `main.jsx` re-fetches updated data. Uses `SkillPicker` component for both offering and seeking.
+- **`Chat.jsx`** — Full-screen messaging at `/chat/:userId`. Message fetch uses `sender_id=in.(X,Y)&receiver_id=in.(X,Y)`. Supabase Realtime subscription for live messages. Optimistic UI. Back button uses `navigate("/app")`.
+- **`SkillPicker.jsx`** (`src/components/`) — Reusable skill selector. Search input filters existing skills. If search text has no exact case-insensitive match, shows "Add [text] as custom skill" button. Custom skills inserted to `custom_skills` table and become available to all users. Module-level cache (`_cache`) prevents duplicate fetches when multiple instances on the same page. Handles 409 (race condition) by re-fetching and highlighting the existing skill.
+- **`skillsData.js`** (`src/lib/`) — Exports `SKILLS` array (24 built-in skills with icon + label) and `NEIGHBORHOODS` object (NYC boroughs → neighborhoods). Staten Island excluded intentionally.
 
 ## Design System
 
@@ -156,22 +198,26 @@ All styling is inline (no CSS modules, no Tailwind). `index.css` is intentionall
 - **Accent:** `#eab308` amber/gold for all interactive elements and highlights
 - **Fonts:** `Cormorant Garamond` (serif display) + `DM Sans` (body) — loaded via Google Fonts `@import` inside each component's inline `<style>` block
 
+## Security Notes (pre-scale)
+
+The following shortcuts are acceptable for the current small invite-only launch but **must be addressed before opening to a larger audience:**
+
+- RLS is disabled on all DB tables — no per-user data isolation
+- RLS on `storage.objects` is permissive (any authenticated user can upload to avatars bucket) — should be locked to `name = auth.uid() || '.' || extension`
+- Invite codes are checked client-side only — a determined person could bypass by calling the Supabase API directly
+
 ## Immediate Next Tasks
 
-1. **Merge `feature/chat` → `main`** — all swipe persistence, match detection, and chat work is on this branch
-2. **Enable Supabase Realtime** — run `alter publication supabase_realtime add table messages;` in the SQL editor (one-time)
-3. **Profile editing** — users can't update skills, bio, or neighborhood after onboarding
-4. **Polish chat navigation** — back button uses `window.location.href` (full reload); switch to React Router `navigate()` for instant transition
-5. **Invite-only system** — controlled signups for the NYC friend-circle launch
-6. **Custom domain** — set up `bartr.app` or `bartr.co` before sharing with real users
+1. **Custom domain** — set up `bartr.app` or `bartr.co` before sharing with real users
+2. **Waitlist email** — connect landing page form to Mailchimp or a Google Sheet
+3. **Neighborhood-weighted matching** — show nearby users first in Discover
+4. **Re-enable RLS** — before scaling beyond the friend circle (see Security Notes)
 
 ## Future Roadmap
 
-- Connect waitlist email to Mailchimp or Beehiiv
-- Profile editing screen
 - Neighborhood-weighted matching (show nearby users first)
 - React Native conversion for App Store
 - Video proof of skill on profiles
 - Safety features (reporting, session check-ins)
-- Invite-only system for controlled early growth
+- Connect waitlist email to Mailchimp or Beehiiv
 - Custom domain (bartr.app or bartr.co)
