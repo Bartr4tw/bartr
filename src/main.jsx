@@ -15,13 +15,23 @@ function Root() {
   const [profile, setProfile] = useState(null);
 
   const checkProfile = async (userId) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-    setHasProfile(!!data);
-    setProfile(data);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
+        {
+          headers: {
+            "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
+      const rows = await res.json();
+      const row = rows[0] || null;
+      setHasProfile(!!row);
+      setProfile(row);
+    } catch {
+      setHasProfile(false);
+    }
   };
 
   useEffect(() => {
