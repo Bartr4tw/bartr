@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase.js";
 
+const authHeaders = {
+  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+};
+
 function transformProfile(row) {
   return {
     id: row.id,
@@ -262,11 +267,6 @@ export default function BartrApp({ profile }) {
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
 
-  const authHeaders = {
-    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-  };
-
   // Fetch profiles excluding already-swiped users
   useEffect(() => {
     if (!profile?.id) return;
@@ -327,9 +327,10 @@ export default function BartrApp({ profile }) {
     setProfiles((p) => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
 
-    // Record swipe in DB
+    // Record swipe in DB (keepalive ensures it completes even if page navigates away)
     await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
       method: "POST",
+      keepalive: true,
       headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify({ swiper_id: profile.id, swiped_id: current.id, direction }),
     });
