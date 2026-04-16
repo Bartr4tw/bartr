@@ -9,18 +9,20 @@ const authHeaders = {
 };
 
 function transformProfile(row) {
+  const seekingLabels = row.seeking ? row.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [];
   return {
     id: row.id,
     name: row.full_name,
     location: row.location,
+    bio: row.bio,
     avatar: row.full_name
       ? row.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
       : "?",
     offering: row.offering,
     offeringIcon: row.offering_icon,
     offeringDesc: row.bio,
-    seeking: row.seeking ? row.seeking.split(",").map((s) => s.trim()).filter(Boolean) : [],
-    seekingIcons: [],
+    seeking: seekingLabels,
+    seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || ""),
     tags: [],
   };
 }
@@ -598,7 +600,7 @@ export default function BartrApp({ profile }) {
                             <div style={{ fontSize: 12, fontWeight: 600, color: "#f9fafb" }}>{m.name}</div>
                             <div style={{ fontSize: 10, color: "#6b7280" }}>{m.offeringIcon} {m.offering}</div>
                           </div>
-                          <button style={{
+                          <button onClick={() => navigate(`/chat/${m.id}`)} style={{
                             background: "transparent", border: "none",
                             color: "#eab308", fontSize: 10, cursor: "pointer", fontWeight: 600,
                           }}>Chat</button>
@@ -682,7 +684,6 @@ export default function BartrApp({ profile }) {
                       <span style={{ fontSize: 30 }}>{YOUR_PROFILE.offeringIcon}</span>
                       <div>
                         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 700, color: "#f9fafb" }}>{YOUR_PROFILE.offering}</div>
-                        <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{YOUR_PROFILE.location}</div>
                       </div>
                     </div>
                   </div>
@@ -701,6 +702,12 @@ export default function BartrApp({ profile }) {
                       ))}
                     </div>
                   </div>
+                  {profile?.bio && (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2.5, color: "#4b5563", marginBottom: 10, fontWeight: 700 }}>ABOUT ME</div>
+                      <p style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
+                    </div>
+                  )}
                   <div style={{
                     paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.05)",
                     display: "flex", justifyContent: "space-between",
