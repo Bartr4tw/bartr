@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 
 export default function Chat() {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [otherProfile, setOtherProfile] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -150,7 +151,7 @@ export default function Chat() {
         display: "flex", alignItems: "center", gap: 16, padding: "0 20px",
       }}>
         <button
-          onClick={() => window.location.href = "/app"}
+          onClick={() => navigate("/app")}
           style={{
             background: "transparent", border: "none",
             color: "#9ca3af", fontSize: 20, cursor: "pointer",
