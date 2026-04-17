@@ -9,10 +9,6 @@ const C = {
   bark: "#4A3728", barkLight: "#7A5C47",
 };
 
-const authHeaders = {
-  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-};
 
 export default function Auth() {
   const [mode, setMode] = useState("login");
@@ -20,7 +16,6 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +26,6 @@ export default function Auth() {
 
     if (mode === "signup") {
       if (!fullName) { setError("Please enter your name."); return; }
-      if (!inviteCode.trim()) { setError("Please enter your invite code."); return; }
       if (password !== confirmPassword) { setError("Passwords don't match."); return; }
       if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     }
@@ -39,17 +33,6 @@ export default function Auth() {
     setLoading(true);
 
     if (mode === "signup") {
-      const codeRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/invite_codes?code=eq.${encodeURIComponent(inviteCode.trim())}`,
-        { headers: authHeaders }
-      );
-      const codes = await codeRes.json();
-      if (!Array.isArray(codes) || codes.length === 0) {
-        setError("Invalid invite code. Ask a friend for theirs and try again.");
-        setLoading(false);
-        return;
-      }
-
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -161,15 +144,6 @@ export default function Auth() {
               <label style={labelStyle}>Full name</label>
               <input type="text" placeholder="Your name" value={fullName}
                 onChange={e => setFullName(e.target.value)} style={inputStyle} />
-            </div>
-          )}
-
-          {/* Invite code */}
-          {mode === "signup" && (
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>Invite code</label>
-              <input type="text" placeholder="Enter your invite code" value={inviteCode}
-                onChange={e => setInviteCode(e.target.value)} style={inputStyle} />
             </div>
           )}
 
