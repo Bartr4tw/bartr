@@ -281,7 +281,7 @@ export default function ProfileView() {
                     background: C.sand, border: `1px solid ${C.sandDark}`,
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
                   }}>
-                    <span style={{ fontSize: 22 }}>{skill?.icon || "✨"}</span>
+                    <span style={{ fontSize: 22 }}>{skill?.icon ?? "✨"}</span>
                     <span style={{
                       fontSize: 11, fontWeight: 600, textAlign: "center",
                       lineHeight: 1.3, color: C.barkLight,

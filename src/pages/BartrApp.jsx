@@ -28,7 +28,7 @@ function transformProfile(row) {
     offeringIcon: row.offering_icon,
     offeringDesc: row.bio,
     seeking: seekingLabels,
-    seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || ""),
+    seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || "✨"),
     instagramHandle: row.instagram_handle || null,
     linkedinUrl: row.linkedin_url || null,
     availability: Array.isArray(row.availability) ? row.availability : [],
@@ -399,7 +399,7 @@ export default function BartrApp({ profile, session }) {
     offering: profile?.offering || "",
     offeringIcon: profile?.offering_icon || "📊",
     seeking: seekingLabels,
-    seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || ""),
+    seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || "✨"),
   };
   const [activeTab, setActiveTab] = useState(0);
   const [profiles, setProfiles] = useState([]);
