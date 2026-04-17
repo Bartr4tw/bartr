@@ -295,6 +295,8 @@ export default function BartrApp({ profile, session }) {
   const [matches, setMatches] = useState([]);
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
+  const [secondChance, setSecondChance] = useState(false);
+  const [secondChanceLoading, setSecondChanceLoading] = useState(false);
 
   // Fetch profiles excluding anyone already swiped on or matched with
   useEffect(() => {
@@ -356,6 +358,48 @@ export default function BartrApp({ profile, session }) {
     await supabase.auth.signOut();
   };
 
+  const loadSecondChance = async () => {
+    setSecondChanceLoading(true);
+    // Fetch IDs the user swiped left on
+    const swipesRes = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&direction=eq.left&select=swiped_id`,
+      { headers: authHeaders }
+    ).then((r) => r.json());
+
+    const leftIds = (Array.isArray(swipesRes) ? swipesRes : []).map((s) => s.swiped_id);
+    if (!leftIds.length) {
+      setSecondChance(true);
+      setSecondChanceLoading(false);
+      return;
+    }
+
+    // Exclude anyone already matched
+    const [matchesAsA, matchesAsB] = await Promise.all([
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${profile.id}&select=user_b`, { headers: authHeaders }).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_b=eq.${profile.id}&select=user_a`, { headers: authHeaders }).then((r) => r.json()),
+    ]);
+    const matchedIds = new Set([
+      ...(Array.isArray(matchesAsA) ? matchesAsA : []).map((m) => m.user_b),
+      ...(Array.isArray(matchesAsB) ? matchesAsB : []).map((m) => m.user_a),
+    ]);
+    const eligibleIds = leftIds.filter((id) => !matchedIds.has(id));
+
+    if (!eligibleIds.length) {
+      setSecondChance(true);
+      setSecondChanceLoading(false);
+      return;
+    }
+
+    const rows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=in.(${eligibleIds.join(",")})&select=*`,
+      { headers: authHeaders }
+    ).then((r) => r.json());
+
+    setProfiles((Array.isArray(rows) ? rows : []).map(transformProfile));
+    setSecondChance(true);
+    setSecondChanceLoading(false);
+  };
+
   const handleSwipe = async (direction) => {
     const current = profiles[0];
     if (!current) return;
@@ -366,13 +410,26 @@ export default function BartrApp({ profile, session }) {
     setProfiles((p) => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
 
-    // Record swipe in DB (keepalive ensures it completes even if page navigates away)
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
-      method: "POST",
-      keepalive: true,
-      headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ swiper_id: profile.id, swiped_id: current.id, direction }),
-    });
+    if (secondChance) {
+      // Update existing swipe record instead of inserting (unique constraint on swiper+swiped)
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&swiped_id=eq.${current.id}`,
+        {
+          method: "PATCH",
+          keepalive: true,
+          headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ direction }),
+        }
+      );
+    } else {
+      // Record swipe in DB (keepalive ensures it completes even if page navigates away)
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
+        method: "POST",
+        keepalive: true,
+        headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ swiper_id: profile.id, swiped_id: current.id, direction }),
+      });
+    }
 
     if (direction === "right") {
       // Check if other user already swiped right on current user
@@ -430,7 +487,7 @@ export default function BartrApp({ profile, session }) {
           {!isMobile && (
             <div style={{ display: "flex" }}>
               {TABS.filter(tab => tab.label !== "Profile").map((tab, i) => (
-                <button key={tab.label} onClick={() => setActiveTab(i)} style={{
+                <button key={tab.label} onClick={() => { setActiveTab(i); if (i === 0) setSecondChance(false); }} style={{
                   padding: "0 18px", height: HEADER_HEIGHT,
                   background: "transparent", border: "none",
                   borderBottom: activeTab === i ? `2px solid ${C.terracotta}` : "2px solid transparent",
@@ -527,14 +584,41 @@ export default function BartrApp({ profile, session }) {
                   </div>
                 </>
               ) : (
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>{profilesLoading ? "⏳" : "✨"}</div>
+                <div style={{ textAlign: "center", maxWidth: 320 }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>
+                    {profilesLoading ? "⏳" : secondChance ? "🔁" : "✨"}
+                  </div>
                   <div style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 400, color: C.bark, marginBottom: 8 }}>
-                    {profilesLoading ? "Finding skill traders..." : "You've seen everyone"}
+                    {profilesLoading
+                      ? "Finding skill traders..."
+                      : secondChance
+                      ? "That's everyone you skipped"
+                      : "You've seen everyone"}
                   </div>
-                  <div style={{ color: C.barkLight, fontSize: 14 }}>
-                    {profilesLoading ? "" : "Check back soon for new skill traders"}
+                  <div style={{ color: C.barkLight, fontSize: 14, marginBottom: 24 }}>
+                    {profilesLoading
+                      ? ""
+                      : secondChance
+                      ? "Check back soon for new skill traders"
+                      : "Want to give someone a second look?"}
                   </div>
+                  {!profilesLoading && !secondChance && (
+                    <button
+                      onClick={loadSecondChance}
+                      disabled={secondChanceLoading}
+                      style={{
+                        background: C.sand,
+                        border: `1.5px solid ${C.sandDark}`,
+                        borderRadius: 100, padding: "12px 28px",
+                        color: C.bark, fontSize: 14, fontWeight: 500,
+                        cursor: secondChanceLoading ? "not-allowed" : "pointer",
+                        opacity: secondChanceLoading ? 0.6 : 1,
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      {secondChanceLoading ? "Loading..." : "Give another look →"}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -757,7 +841,7 @@ export default function BartrApp({ profile, session }) {
           display: "flex", padding: "8px 0 16px", zIndex: 40,
         }}>
           {TABS.map((tab, i) => (
-            <button key={tab.label} onClick={() => setActiveTab(i)} style={{
+            <button key={tab.label} onClick={() => { setActiveTab(i); if (i === 0) setSecondChance(false); }} style={{
               flex: 1, padding: "8px 0", background: "transparent", border: "none",
               color: activeTab === i ? C.terracotta : C.barkLight,
               fontSize: 11, fontWeight: 500, cursor: "pointer",
