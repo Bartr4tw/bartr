@@ -19,6 +19,7 @@ function transformProfile(row) {
     name: row.full_name,
     location: row.location,
     bio: row.bio,
+    age: row.age || null,
     avatar: row.full_name
       ? row.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
       : "?",
@@ -28,7 +29,11 @@ function transformProfile(row) {
     offeringDesc: row.bio,
     seeking: seekingLabels,
     seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || ""),
-    tags: [],
+    instagramHandle: row.instagram_handle || null,
+    linkedinUrl: row.linkedin_url || null,
+    availability: Array.isArray(row.availability) ? row.availability : [],
+    swapPreference: Array.isArray(row.swap_preference) ? row.swap_preference : [],
+    swapsCompleted: row.swaps_completed || 0,
   };
 }
 
@@ -129,101 +134,208 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
 
       {/* Card */}
       <div style={{
-        background: C.warmWhite, borderRadius: 24, height: "100%",
+        background: C.warmWhite, borderRadius: 20, height: "100%",
         boxShadow: "0 4px 16px rgba(74,55,40,0.07), 0 0 0 1.5px " + C.sandDark,
         display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}>
-        {/* Photo — 40% of card height */}
-        <div style={{ height: "40%", flexShrink: 0, position: "relative", overflow: "hidden" }}>
+
+        {/* ── Photo area ── */}
+        <div style={{ height: 200, flexShrink: 0, position: "relative", overflow: "hidden" }}>
           {profile.avatarUrl ? (
-            <>
-              <img src={profile.avatarUrl} style={{
-                width: "100%", height: "100%", objectFit: "cover", display: "block",
-              }} />
-              <div style={{
-                position: "absolute", bottom: 0, left: 0, right: 0, height: "60%",
-                background: "linear-gradient(to bottom, transparent, rgba(74,55,40,0.55))",
-                pointerEvents: "none",
-              }} />
-            </>
+            <img src={profile.avatarUrl} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           ) : (
             <div style={{
               width: "100%", height: "100%",
-              background: C.sand,
+              background: `linear-gradient(135deg, ${C.sand}, ${C.sandDark})`,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <span style={{
-                fontFamily: "'Fraunces', serif", fontWeight: 600,
-                fontSize: 72, color: C.terracotta, lineHeight: 1,
-              }}>{profile.avatar}</span>
+              <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: 80, color: C.terracotta, lineHeight: 1 }}>
+                {profile.avatar}
+              </span>
             </div>
           )}
+
+          {/* Dark gradient for text legibility */}
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(to bottom, transparent 40%, rgba(30,18,10,0.72) 100%)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Swaps completed badge — top right, hidden if 0 */}
+          {profile.swapsCompleted > 0 && (
+            <div style={{
+              position: "absolute", top: 12, right: 12,
+              background: "rgba(30,18,10,0.55)", backdropFilter: "blur(6px)",
+              borderRadius: 100, padding: "4px 10px",
+              display: "flex", alignItems: "center", gap: 5,
+            }}>
+              <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>
+                {profile.swapsCompleted} swaps done
+              </span>
+            </div>
+          )}
+
+          {/* Name / age / location overlay */}
+          <div style={{ position: "absolute", bottom: 14, left: 16, right: 16, pointerEvents: "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+              <span style={{
+                fontFamily: "'Fraunces', serif", fontWeight: 600,
+                fontSize: 22, color: "#fff", lineHeight: 1.1,
+              }}>
+                {profile.name}{profile.age ? `, ${profile.age}` : ""}
+              </span>
+              {/* Verified badge */}
+              <div style={{
+                width: 18, height: 18, borderRadius: "50%",
+                background: C.terracotta,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 10, color: "#fff", fontWeight: 700, lineHeight: 1 }}>✓</span>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.82)" }}>📍 {profile.location}</div>
+          </div>
         </div>
 
-        {/* Content */}
-        <div style={{
-          flex: 1, overflowY: "auto",
-          padding: "20px 24px 24px",
-          display: "flex", flexDirection: "column", gap: 14,
-        }}>
-          {/* Name + location */}
-          <div>
-            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: C.bark, lineHeight: 1.1 }}>
-              {profile.name}
-            </div>
-            <div style={{ fontSize: 12, color: C.barkLight, marginTop: 4 }}>📍 {profile.location}</div>
-          </div>
+        {/* ── Scrollable content ── */}
+        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
 
-          {/* Match signal banner — shown when they want to learn what you offer */}
+          {/* Social links */}
+          {(profile.instagramHandle || profile.linkedinUrl) && (
+            <div style={{
+              display: "flex", gap: 8, padding: "12px 16px",
+              borderBottom: `1px solid ${C.sandDark}`,
+            }}>
+              {profile.instagramHandle && (
+                <a
+                  href={`https://instagram.com/${profile.instagramHandle.replace(/^@/, "")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ textDecoration: "none" }}
+                >
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    background: "rgba(212,113,74,0.08)", border: `1px solid rgba(212,113,74,0.25)`,
+                    borderRadius: 100, padding: "5px 12px",
+                  }}>
+                    <span style={{ fontSize: 13 }}>📸</span>
+                    <span style={{ fontSize: 12, color: C.terracotta, fontWeight: 500 }}>
+                      @{profile.instagramHandle.replace(/^@/, "")}
+                    </span>
+                  </div>
+                </a>
+              )}
+              {profile.linkedinUrl && (
+                <a
+                  href={profile.linkedinUrl.startsWith("http") ? profile.linkedinUrl : `https://${profile.linkedinUrl}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ textDecoration: "none" }}
+                >
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    background: "rgba(10,102,194,0.08)", border: "1px solid rgba(10,102,194,0.2)",
+                    borderRadius: 100, padding: "5px 12px",
+                  }}>
+                    <span style={{ fontSize: 13 }}>💼</span>
+                    <span style={{ fontSize: 12, color: "#0a66c2", fontWeight: 500 }}>LinkedIn</span>
+                  </div>
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Match signal banner */}
           {profile.seeking.includes(yourProfile.offering) && (
             <div style={{
+              margin: "12px 16px 0",
               background: `rgba(212,113,74,0.08)`,
               border: `1px solid rgba(212,113,74,0.28)`,
               borderRadius: 12, padding: "10px 14px",
               display: "flex", alignItems: "center", gap: 8,
             }}>
-              <span style={{ fontSize: 16 }}>⚡</span>
+              <span style={{ fontSize: 15 }}>⚡</span>
               <span style={{ fontSize: 13, color: C.terracotta, fontWeight: 500, lineHeight: 1.4 }}>
                 {profile.name.split(" ")[0]} wants to learn {yourProfile.offering}
               </span>
             </div>
           )}
 
-          {/* Offering pill */}
+          {/* Offering block */}
           <div style={{
-            display: "flex", alignItems: "center", gap: 12,
-            background: C.sand, border: `1.5px solid ${C.sandDark}`,
-            borderRadius: 14, padding: "12px 16px",
+            margin: "12px 16px 0",
+            background: C.sand, border: `1px solid ${C.sandDark}`,
+            borderRadius: 14, padding: "14px 16px",
           }}>
-            <span style={{ fontSize: 30, flexShrink: 0 }}>{profile.offeringIcon}</span>
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 2 }}>OFFERING</div>
-              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: C.bark }}>{profile.offering}</div>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 8 }}>OFFERING</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: profile.bio ? 10 : 0 }}>
+              <span style={{ fontSize: 32, flexShrink: 0 }}>{profile.offeringIcon}</span>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark }}>
+                {profile.offering}
+              </div>
             </div>
+            {profile.bio && (
+              <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
+            )}
           </div>
 
-          {/* Wants to learn chips */}
+          {/* Availability */}
+          {profile.availability?.length > 0 && (
+            <div style={{ margin: "12px 16px 0" }}>
+              <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 8 }}>AVAILABILITY</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {profile.availability.map(a => (
+                  <span key={a} style={{
+                    background: C.warmWhite, border: `1px solid ${C.sandDark}`,
+                    borderRadius: 100, padding: "4px 12px",
+                    fontSize: 12, color: C.barkLight, fontWeight: 500,
+                  }}>{a}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Swap preference */}
+          {profile.swapPreference?.length > 0 && (
+            <div style={{ margin: "12px 16px 0" }}>
+              <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 8 }}>SWAP PREFERENCE</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {profile.swapPreference.map(p => (
+                  <span key={p} style={{
+                    background: C.warmWhite, border: `1px solid ${C.sandDark}`,
+                    borderRadius: 100, padding: "4px 12px",
+                    fontSize: 12, color: C.barkLight, fontWeight: 500,
+                  }}>{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Wants to learn — 3-column grid */}
           {profile.seeking.length > 0 && (
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 8, fontWeight: 700 }}>WANTS TO LEARN</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ margin: "12px 16px 16px" }}>
+              <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 8 }}>WANTS TO LEARN</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {profile.seeking.map((s, i) => {
                   const isMatch = s === yourProfile.offering;
                   return (
                     <div key={s} style={{
-                      borderRadius: 10, padding: "7px 12px",
-                      display: "flex", alignItems: "center", gap: 6,
+                      borderRadius: 10, padding: "10px 6px", textAlign: "center",
                       background: isMatch ? `rgba(212,113,74,0.10)` : C.warmWhite,
-                      border: isMatch ? `1px solid rgba(212,113,74,0.30)` : `1px solid ${C.sandDark}`,
+                      border: isMatch ? `1.5px solid rgba(212,113,74,0.35)` : `1px solid ${C.sandDark}`,
                     }}>
                       {profile.seekingIcons?.[i] && (
-                        <span style={{ fontSize: 15 }}>{profile.seekingIcons[i]}</span>
+                        <div style={{ fontSize: 20, marginBottom: 4 }}>{profile.seekingIcons[i]}</div>
                       )}
-                      <span style={{ fontSize: 12, color: isMatch ? C.terracotta : C.barkLight, fontWeight: isMatch ? 600 : 400 }}>
+                      <div style={{ fontSize: 11, color: isMatch ? C.terracotta : C.barkLight, fontWeight: isMatch ? 600 : 400, lineHeight: 1.3 }}>
                         {s}
-                      </span>
-                      {isMatch && <span style={{ fontSize: 11, color: C.terracotta }}>⚡</span>}
+                      </div>
+                      {isMatch && (
+                        <div style={{ fontSize: 9, color: C.terracotta, marginTop: 3, fontWeight: 700 }}>you offer!</div>
+                      )}
                     </div>
                   );
                 })}
@@ -231,10 +343,6 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
             </div>
           )}
 
-          {/* Bio */}
-          {profile.bio && (
-            <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
-          )}
         </div>
       </div>
     </div>
@@ -242,13 +350,17 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
 }
 
 function MatchCard({ profile, yourProfile }) {
+  const navigate = useNavigate();
   return (
-    <div style={{
-      background: C.warmWhite, borderRadius: 16, padding: "16px",
-      border: `1.5px solid ${C.sandDark}`,
-      boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
-      display: "flex", alignItems: "center", gap: 14,
-    }}>
+    <div
+      onClick={() => navigate(`/profile/${profile.id}`)}
+      style={{
+        background: C.warmWhite, borderRadius: 16, padding: "16px",
+        border: `1.5px solid ${C.sandDark}`,
+        boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
+        display: "flex", alignItems: "center", gap: 14,
+        cursor: "pointer",
+      }}>
       <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border={`1.5px solid ${C.sandDark}`} />
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, color: C.bark, fontSize: 16 }}>
@@ -259,7 +371,7 @@ function MatchCard({ profile, yourProfile }) {
         </div>
       </div>
       <button
-        onClick={() => window.location.href = `/chat/${profile.id}`}
+        onClick={(e) => { e.stopPropagation(); navigate(`/chat/${profile.id}`); }}
         style={{
           background: `rgba(212,113,74,0.10)`,
           border: `1px solid rgba(212,113,74,0.25)`,

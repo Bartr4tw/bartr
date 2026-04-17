@@ -9,6 +9,7 @@ import Onboarding from "./pages/Onboarding.jsx";
 import Chat from "./pages/Chat.jsx";
 import EditProfile from "./pages/EditProfile.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+import ProfileView from "./pages/ProfileView.jsx";
 import "./index.css";
 
 function AppRoute({ loading, session, hasProfile, profile, onComplete }) {
@@ -85,6 +86,7 @@ function Root() {
         } />
         <Route path="/auth" element={<Auth />} />
         <Route path="/chat/:userId" element={<Chat />} />
+        <Route path="/profile/:userId" element={<ProfileView />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>

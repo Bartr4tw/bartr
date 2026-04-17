@@ -170,33 +170,45 @@ export default function Chat() {
           }}
         >‹</button>
 
-        {otherProfile?.avatar_url ? (
-          <img src={otherProfile.avatar_url} style={{
-            width: 40, height: 40, borderRadius: "50%", objectFit: "cover",
-            border: `2px solid ${C.sandDark}`, flexShrink: 0,
-          }} />
-        ) : (
-          <div style={{
-            width: 40, height: 40, borderRadius: "50%",
-            background: C.sand, border: `2px solid ${C.sandDark}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Fraunces', serif", fontWeight: 600,
-            fontSize: 15, color: C.terracotta, flexShrink: 0,
-          }}>{avatarInitials}</div>
-        )}
-
-        <div>
-          <div style={{
-            fontFamily: "'Fraunces', serif", fontWeight: 600,
-            fontSize: 18, color: C.bark,
-          }}>
-            {otherProfile?.full_name || "Loading..."}
-          </div>
-          {otherProfile && (
-            <div style={{ fontSize: 11, color: C.barkLight, marginTop: 1 }}>
-              {otherProfile.offering_icon} {otherProfile.offering} · {otherProfile.location}
-            </div>
+        <div
+          onClick={() => navigate(`/profile/${userId}`)}
+          style={{
+            display: "flex", alignItems: "center", gap: 12,
+            flex: 1, cursor: "pointer", minHeight: 44,
+          }}
+        >
+          {otherProfile?.avatar_url ? (
+            <img src={otherProfile.avatar_url} style={{
+              width: 40, height: 40, borderRadius: "50%", objectFit: "cover",
+              border: `2px solid ${C.sandDark}`, flexShrink: 0,
+            }} />
+          ) : (
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              background: C.sand, border: `2px solid ${C.sandDark}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "'Fraunces', serif", fontWeight: 600,
+              fontSize: 15, color: C.terracotta, flexShrink: 0,
+            }}>{avatarInitials}</div>
           )}
+
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: "'Fraunces', serif", fontWeight: 600,
+              fontSize: 18, color: C.bark,
+            }}>
+              {otherProfile?.full_name || "Loading..."}
+            </div>
+            {otherProfile && (
+              <div style={{ fontSize: 11, color: C.barkLight, marginTop: 1 }}>
+                {otherProfile.offering_icon} {otherProfile.offering} · {otherProfile.location}
+              </div>
+            )}
+          </div>
+
+          <div style={{ fontSize: 11, color: C.barkLight, paddingRight: 4 }}>
+            View profile ›
+          </div>
         </div>
       </div>
 
