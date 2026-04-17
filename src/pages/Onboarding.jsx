@@ -115,7 +115,7 @@ export default function Onboarding({ user, onComplete }) {
             Bartr<span style={{ color: C.terracotta }}>.</span>
           </div>
           <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>
-            Step {step} of {totalSteps} — {step === 1 ? "About you" : step === 2 ? "What you offer" : "What you want to learn"}
+            Step {step} of {totalSteps}: {step === 1 ? "About you" : step === 2 ? "What you offer" : "What you want to learn"}
           </div>
           {/* Progress bar */}
           <div style={{ height: 3, background: C.sandDark, borderRadius: 2 }}>

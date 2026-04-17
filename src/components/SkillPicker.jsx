@@ -112,7 +112,7 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
     if (existing) {
       setSearch("");
       setHighlightLabel(existing.label);
-      showNotice("duplicate", `"${existing.label}" is already available — highlighted below.`);
+      showNotice("duplicate", `"${existing.label}" is already available, highlighted below.`);
       // Scroll the grid so the highlighted tile is visible
       setTimeout(() => {
         gridRef.current?.querySelector("[data-highlight='true']")?.scrollIntoView({
@@ -153,7 +153,7 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
       if (justAdded) {
         setSearch("");
         setHighlightLabel(justAdded.label);
-        showNotice("duplicate", `"${justAdded.label}" was just added by someone else — highlighted below.`);
+        showNotice("duplicate", `"${justAdded.label}" was just added by someone else, highlighted below.`);
       }
     } else {
       showNotice("error", "Something went wrong. Please try again.");

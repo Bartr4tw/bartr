@@ -146,9 +146,9 @@ export default function BartrLanding() {
   }, []);
 
   const steps = [
-    { icon: "✏️", title: "List your skill", desc: "Tell us what you're great at — cooking, coding, calligraphy, whatever it is. There's someone out there who wants to learn it." },
+    { icon: "✏️", title: "List your skill", desc: "Tell us what you're great at. Cooking, coding, calligraphy, whatever it is. There's someone out there who wants to learn it." },
     { icon: "👆", title: "Swipe to match", desc: "Browse skills you want to learn. Swipe right when something sparks your interest. We'll let you know when it's mutual." },
-    { icon: "🤝", title: "Make the swap", desc: "Set up a session, exchange knowledge, and grow together. No money involved — just two people leveling each other up." },
+    { icon: "🤝", title: "Make the swap", desc: "Set up a session, exchange knowledge, and grow together. No money involved, just two people leveling each other up." },
   ];
 
   const marqueeSkills = [...MARQUEE_SKILLS, ...MARQUEE_SKILLS];
@@ -511,7 +511,7 @@ export default function BartrLanding() {
           <div style={{ width: 40, height: 2, background: C.clay, marginBottom: 32 }} />
           <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 520 }}>
             Bartr is built on the belief that every person has something worth teaching,
-            and something worth learning. We're not replacing human skill — we're celebrating it.
+            and something worth learning. We're not replacing human skill, we're celebrating it.
           </p>
         </div>
       </section>
