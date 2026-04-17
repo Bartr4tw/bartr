@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase.js";
 import { SKILLS } from "../lib/skillsData.js";
 
 const C = {
@@ -404,7 +403,6 @@ export default function BartrApp({ profile, session }) {
   const [activeTab, setActiveTab] = useState(0);
   const [profiles, setProfiles] = useState([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
-  const [seenCount, setSeenCount] = useState(0);
   const [matches, setMatches] = useState([]);
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
@@ -467,10 +465,6 @@ export default function BartrApp({ profile, session }) {
 
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
   const loadSecondChance = async () => {
     setSecondChanceLoading(true);
     // Fetch IDs the user swiped left on
@@ -519,7 +513,6 @@ export default function BartrApp({ profile, session }) {
 
     // Update UI immediately
     setLastAction(direction);
-    setSeenCount((c) => c + 1);
     setProfiles((p) => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
 
@@ -621,12 +614,12 @@ export default function BartrApp({ profile, session }) {
             </div>
           )}
         </div>
-        <button onClick={() => setActiveTab(2)} style={{
+        <button onClick={() => navigate(`/profile/${profile.id}`)} style={{
           display: "flex", alignItems: "center", gap: 8,
-          background: activeTab === 2 ? `rgba(212,113,74,0.10)` : C.sand,
-          border: activeTab === 2 ? `1px solid rgba(212,113,74,0.30)` : `1px solid ${C.sandDark}`,
+          background: C.sand,
+          border: `1px solid ${C.sandDark}`,
           borderRadius: 100, padding: "6px 14px",
-          color: activeTab === 2 ? C.terracotta : C.barkLight,
+          color: C.barkLight,
           fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s",
           minHeight: 44,
         }}>
@@ -847,103 +840,6 @@ export default function BartrApp({ profile, session }) {
           </div>
         )}
 
-        {/* PROFILE */}
-        {activeTab === 2 && (
-          <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "40px" }}>
-            <div style={{ maxWidth: 600, margin: "0 auto" }}>
-              <div style={{
-                background: C.warmWhite, borderRadius: 20, overflow: "hidden",
-                border: `1.5px solid ${C.sandDark}`,
-                boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
-              }}>
-                <div style={{
-                  background: C.sand,
-                  padding: "28px 24px", borderBottom: `1px solid ${C.sandDark}`,
-                  position: "relative", overflow: "hidden",
-                }}>
-                  <div style={{
-                    position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%",
-                    background: `radial-gradient(circle, rgba(212,113,74,0.08), transparent 70%)`,
-                  }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <Avatar url={YOUR_PROFILE.avatarUrl} initials={YOUR_PROFILE.avatar} size={72} fontSize={24} border={`2px solid ${C.sandDark}`} />
-                    <div>
-                      <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: C.bark }}>{YOUR_PROFILE.name}</div>
-                      <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {YOUR_PROFILE.location}</div>
-                      <div style={{
-                        display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
-                        background: `rgba(212,113,74,0.10)`, border: `1px solid rgba(212,113,74,0.25)`,
-                        borderRadius: 100, padding: "3px 12px",
-                      }}>
-                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.terracotta, animation: "pulse 2s infinite" }} />
-                        <span style={{ fontSize: 10, color: C.terracotta, fontWeight: 600 }}>ACTIVE</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ padding: "20px 24px" }}>
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>I OFFER</div>
-                    <div style={{
-                      display: "flex", alignItems: "center", gap: 14,
-                      background: C.sand, border: `1.5px solid ${C.sandDark}`,
-                      borderRadius: 14, padding: "14px 16px",
-                    }}>
-                      <span style={{ fontSize: 30 }}>{YOUR_PROFILE.offeringIcon}</span>
-                      <div>
-                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: C.bark }}>{YOUR_PROFILE.offering}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>I WANT TO LEARN</div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      {YOUR_PROFILE.seeking.map((s, i) => (
-                        <div key={s} style={{
-                          flex: 1, background: C.sand,
-                          border: `1px solid ${C.sandDark}`,
-                          borderRadius: 12, padding: "12px 8px", textAlign: "center",
-                        }}>
-                          <div style={{ fontSize: 22 }}>{YOUR_PROFILE.seekingIcons[i]}</div>
-                          <div style={{ fontSize: 11, color: C.barkLight, marginTop: 4 }}>{s}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {profile?.bio && (
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>ABOUT ME</div>
-                      <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
-                    </div>
-                  )}
-                  <div style={{
-                    paddingTop: 20, borderTop: `1px solid ${C.sandDark}`,
-                    display: "flex", justifyContent: "space-between",
-                  }}>
-                    {[["Matches", matches.length], ["Seen", seenCount], ["Skills", YOUR_PROFILE.seeking.length]].map(([label, val]) => (
-                      <div key={label} style={{ textAlign: "center" }}>
-                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400, color: C.clayDeep }}>{val}</div>
-                        <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => navigate("/profile/edit")} style={{
-                width: "100%", marginTop: 12,
-                background: C.sand, border: `1px solid ${C.sandDark}`,
-                borderRadius: 100, padding: "14px",
-                color: C.barkLight, fontSize: 13, fontWeight: 500, cursor: "pointer",
-              }}>Edit Profile</button>
-              <button onClick={handleSignOut} style={{
-                width: "100%", marginTop: 8,
-                background: "rgba(192,122,82,0.08)", border: "1px solid rgba(192,122,82,0.25)",
-                borderRadius: 100, padding: "14px",
-                color: C.clay, fontSize: 13, fontWeight: 500, cursor: "pointer",
-              }}>Sign Out</button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Mobile bottom tabs */}
@@ -955,7 +851,11 @@ export default function BartrApp({ profile, session }) {
           display: "flex", padding: "8px 0 16px", zIndex: 40,
         }}>
           {TABS.map((tab, i) => (
-            <button key={tab.label} onClick={() => { setActiveTab(i); if (i === 0) setSecondChance(false); }} style={{
+            <button key={tab.label} onClick={() => {
+              if (i === 2) { navigate(`/profile/${profile.id}`); return; }
+              setActiveTab(i);
+              if (i === 0) setSecondChance(false);
+            }} style={{
               flex: 1, padding: "8px 0", background: "transparent", border: "none",
               color: activeTab === i ? C.terracotta : C.barkLight,
               fontSize: 11, fontWeight: 500, cursor: "pointer",

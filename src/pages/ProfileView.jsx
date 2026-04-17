@@ -22,10 +22,12 @@ export default function ProfileView() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isSelf, setIsSelf] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
+      setIsSelf(session.user.id === userId);
       const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
@@ -120,11 +122,15 @@ export default function ProfileView() {
           position: "absolute", left: "50%", transform: "translateX(-50%)",
         }}>Profile</div>
 
-        <button style={{
-          background: "transparent", border: "none",
-          color: C.barkLight, fontSize: 13, cursor: "pointer",
-          fontFamily: "'DM Sans', sans-serif", minHeight: 44,
-        }}>Report</button>
+        {isSelf ? (
+          <div style={{ minWidth: 60 }} />
+        ) : (
+          <button style={{
+            background: "transparent", border: "none",
+            color: C.barkLight, fontSize: 13, cursor: "pointer",
+            fontFamily: "'DM Sans', sans-serif", minHeight: 44,
+          }}>Report</button>
+        )}
       </div>
 
       {/* Photo area */}
@@ -337,26 +343,53 @@ export default function ProfileView() {
         position: "fixed", bottom: 0, left: 0, right: 0,
         background: C.warmWhite,
         borderTop: `1px solid ${C.sandDark}`,
-        padding: `12px 16px`,
+        padding: "12px 16px",
         paddingBottom: "env(safe-area-inset-bottom, 16px)",
         display: "flex", gap: 10,
       }}>
-        <button style={{
-          width: 50, height: 50, borderRadius: 14, flexShrink: 0,
-          background: C.sand, border: `1px solid ${C.sandDark}`,
-          cursor: "pointer", fontSize: 20,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>📌</button>
-
-        <button
-          onClick={() => navigate(`/chat/${userId}`)}
-          style={{
-            flex: 1, padding: "14px", minHeight: 50,
-            background: C.terracotta, border: "none", borderRadius: 100,
-            color: C.cream, fontSize: 15, fontWeight: 500,
-            cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-          }}
-        >Message {firstName}</button>
+        {isSelf ? (
+          <>
+            <button
+              onClick={() => navigate("/profile/edit")}
+              style={{
+                flex: 1, padding: "14px", minHeight: 50,
+                background: C.terracotta, border: "none", borderRadius: 100,
+                color: C.cream, fontSize: 15, fontWeight: 500,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              }}
+            >Edit Profile</button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/";
+              }}
+              style={{
+                flex: 1, padding: "14px", minHeight: 50,
+                background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              }}
+            >Sign Out</button>
+          </>
+        ) : (
+          <>
+            <button style={{
+              width: 50, height: 50, borderRadius: 14, flexShrink: 0,
+              background: C.sand, border: `1px solid ${C.sandDark}`,
+              cursor: "pointer", fontSize: 20,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>📌</button>
+            <button
+              onClick={() => navigate(`/chat/${userId}`)}
+              style={{
+                flex: 1, padding: "14px", minHeight: 50,
+                background: C.terracotta, border: "none", borderRadius: 100,
+                color: C.cream, fontSize: 15, fontWeight: 500,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              }}
+            >Message {firstName}</button>
+          </>
+        )}
       </div>
     </div>
   );
