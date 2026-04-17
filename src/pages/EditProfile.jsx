@@ -43,6 +43,11 @@ export default function EditProfile() {
   const [fullName, setFullName] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [bio, setBio] = useState("");
+  const [age, setAge] = useState("");
+  const [instagramHandle, setInstagramHandle] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [availability, setAvailability] = useState([]);
+  const [swapPreference, setSwapPreference] = useState([]);
   const [offering, setOffering] = useState(null);
   const [seeking, setSeeking] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -65,6 +70,11 @@ export default function EditProfile() {
         setFullName(p.full_name || "");
         setNeighborhood(p.location || "");
         setBio(p.bio || "");
+        setAge(p.age != null ? String(p.age) : "");
+        setInstagramHandle(p.instagram_handle || "");
+        setLinkedinUrl(p.linkedin_url || "");
+        setAvailability(Array.isArray(p.availability) ? p.availability : []);
+        setSwapPreference(Array.isArray(p.swap_preference) ? p.swap_preference : []);
         setAvatarUrl(p.avatar_url || null);
         setAvatarPreview(p.avatar_url || null);
         const offeringSkill = SKILLS.find((s) => s.label === p.offering) || { icon: "✨", label: p.offering };
@@ -138,6 +148,11 @@ export default function EditProfile() {
           full_name: fullName.trim(),
           location: neighborhood,
           bio: bio.trim(),
+          age: age !== "" ? parseInt(age, 10) : null,
+          instagram_handle: instagramHandle.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+          availability: availability,
+          swap_preference: swapPreference,
           offering: offering.label,
           offering_icon: offering.icon,
           seeking: seeking.join(","),
@@ -267,11 +282,105 @@ export default function EditProfile() {
             </select>
           </div>
 
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Age <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <input
+              type="number" min={13} max={120}
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="e.g. 28"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Instagram <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <input
+              type="text"
+              value={instagramHandle}
+              onChange={(e) => setInstagramHandle(e.target.value)}
+              placeholder="@yourhandle"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>LinkedIn <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <input
+              type="text"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              placeholder="linkedin.com/in/yourname"
+              style={inputStyle}
+            />
+          </div>
+
           <div>
             <label style={labelStyle}>Bio <span style={{ color: C.sandDark }}>(optional)</span></label>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
               placeholder="Tell people a bit about yourself..."
               style={{ ...inputStyle, resize: "none" }} />
+          </div>
+        </div>
+
+        {/* Availability & Swap Preference */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 20 }}>
+            Availability & preferences
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>When are you free? <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {["Mornings", "Evenings", "Weekdays", "Weekends"].map((opt) => {
+                const active = availability.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setAvailability((prev) =>
+                      prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]
+                    )}
+                    style={{
+                      padding: "9px 16px", minHeight: 40, borderRadius: 100,
+                      border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                      background: active ? "rgba(212,113,74,0.1)" : C.sand,
+                      color: active ? C.terracotta : C.barkLight,
+                      fontSize: 13, fontWeight: active ? 600 : 400,
+                      cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                      transition: "all 0.15s",
+                    }}
+                  >{opt}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>How do you prefer to meet? <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {["In person", "Virtual"].map((opt) => {
+                const active = swapPreference.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSwapPreference((prev) =>
+                      prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]
+                    )}
+                    style={{
+                      padding: "9px 16px", minHeight: 40, borderRadius: 100,
+                      border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                      background: active ? "rgba(212,113,74,0.1)" : C.sand,
+                      color: active ? C.terracotta : C.barkLight,
+                      fontSize: 13, fontWeight: active ? 600 : 400,
+                      cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                      transition: "all 0.15s",
+                    }}
+                  >{opt}</button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

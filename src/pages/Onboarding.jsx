@@ -16,8 +16,11 @@ export default function Onboarding({ user, onComplete }) {
   const [fullName, setFullName] = useState(user.user_metadata?.full_name || "");
   const [neighborhood, setNeighborhood] = useState("");
   const [bio, setBio] = useState("");
+  const [age, setAge] = useState("");
   const [offering, setOffering] = useState(null);
   const [seeking, setSeeking] = useState([]);
+  const [availability, setAvailability] = useState([]);
+  const [swapPreference, setSwapPreference] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,9 +51,12 @@ export default function Onboarding({ user, onComplete }) {
         full_name: fullName,
         location: neighborhood,
         bio,
+        age: age !== "" ? parseInt(age, 10) : null,
         offering: offering.label,
         offering_icon: offering.icon,
         seeking: seeking.join(","),
+        availability,
+        swap_preference: swapPreference,
       })
     });
 
@@ -162,6 +168,12 @@ export default function Onboarding({ user, onComplete }) {
                 </select>
               </div>
 
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Age <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <input type="number" min={13} max={120} placeholder="e.g. 28"
+                  value={age} onChange={e => setAge(e.target.value)} style={inputStyle} />
+              </div>
+
               <div style={{ marginBottom: 24 }}>
                 <label style={labelStyle}>Short bio <span style={{ color: C.sandDark }}>(optional)</span></label>
                 <textarea placeholder="Tell people a bit about yourself..." value={bio}
@@ -224,6 +236,56 @@ export default function Onboarding({ user, onComplete }) {
                   {seeking.length} selected: {seeking.join(", ")}
                 </div>
               )}
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>When are you free? <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Mornings", "Evenings", "Weekdays", "Weekends"].map((opt) => {
+                    const active = availability.includes(opt);
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => setAvailability(prev =>
+                          prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt]
+                        )}
+                        style={{
+                          padding: "9px 16px", minHeight: 40, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                          background: active ? "rgba(212,113,74,0.1)" : C.sand,
+                          color: active ? C.terracotta : C.barkLight,
+                          fontSize: 13, fontWeight: active ? 600 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle}>How do you prefer to meet? <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["In person", "Virtual"].map((opt) => {
+                    const active = swapPreference.includes(opt);
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => setSwapPreference(prev =>
+                          prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt]
+                        )}
+                        style={{
+                          padding: "9px 16px", minHeight: 40, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                          background: active ? "rgba(212,113,74,0.1)" : C.sand,
+                          color: active ? C.terracotta : C.barkLight,
+                          fontSize: 13, fontWeight: active ? 600 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+              </div>
 
               {error && <div style={{ color: C.terracotta, fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
