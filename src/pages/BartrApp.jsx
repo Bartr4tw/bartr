@@ -203,11 +203,6 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
             </div>
           </div>
 
-          {/* Bio */}
-          {profile.bio && (
-            <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
-          )}
-
           {/* Wants to learn chips */}
           {profile.seeking.length > 0 && (
             <div>
@@ -234,6 +229,11 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
                 })}
               </div>
             </div>
+          )}
+
+          {/* Bio */}
+          {profile.bio && (
+            <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
           )}
         </div>
       </div>
