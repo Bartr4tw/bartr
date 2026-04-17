@@ -112,7 +112,7 @@ export default function Onboarding({ user, onComplete }) {
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: C.clayDeep, marginBottom: 4, letterSpacing: -0.5 }}>
-            bartr<span style={{ color: C.terracotta }}>.</span>
+            Bartr<span style={{ color: C.terracotta }}>.</span>
           </div>
           <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>
             Step {step} of {totalSteps} — {step === 1 ? "About you" : step === 2 ? "What you offer" : "What you want to learn"}

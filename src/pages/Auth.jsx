@@ -106,7 +106,7 @@ export default function Auth() {
               fontSize: 32, fontWeight: 600, color: C.clayDeep, letterSpacing: -0.5,
               marginBottom: 4,
             }}>
-              bartr<span style={{ color: C.terracotta }}>.</span>
+              Bartr<span style={{ color: C.terracotta }}>.</span>
             </div>
           </a>
           <div style={{ fontSize: 13, color: C.barkLight }}>

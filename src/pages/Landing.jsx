@@ -201,7 +201,7 @@ export default function BartrLanding() {
         borderBottom: `1px solid ${C.sandDark}`,
       }}>
         <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 22 : 26, fontWeight: 600, letterSpacing: -0.5, color: C.clayDeep }}>
-          bartr<span style={{ color: C.terracotta }}>.</span>
+          Bartr<span style={{ color: C.terracotta }}>.</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 32 }}>
           {!isMobile && (
@@ -582,7 +582,7 @@ export default function BartrLanding() {
         textAlign: isMobile ? "center" : "left",
       }}>
         <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.clayDeep }}>
-          bartr<span style={{ color: C.terracotta }}>.</span>
+          Bartr<span style={{ color: C.terracotta }}>.</span>
         </div>
         <div style={{ fontSize: 12, color: C.barkLight }}>Teach what you know. Learn what you don't.</div>
       </footer>
