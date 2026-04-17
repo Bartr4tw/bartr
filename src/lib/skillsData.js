@@ -46,6 +46,7 @@ export const SKILLS = [
   // Arts & Crafts
   { icon: "🖌️", label: "Painting",        category: "Arts & Crafts" },
   { icon: "✏️", label: "Drawing",         category: "Arts & Crafts" },
+  { icon: "🎭", label: "Acting",          category: "Arts & Crafts" },
   { icon: "🧶", label: "Knitting",        category: "Arts & Crafts" },
   { icon: "🪵", label: "Woodworking",     category: "Arts & Crafts" },
   // Food
