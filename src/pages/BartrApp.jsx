@@ -127,112 +127,112 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
         transform: "rotate(15deg)", pointerEvents: "none",
       }}>SKIP</div>
 
+      {/* Card */}
       <div style={{
         background: C.warmWhite, borderRadius: 24, height: "100%",
         boxShadow: "0 4px 16px rgba(74,55,40,0.07), 0 0 0 1.5px " + C.sandDark,
-        display: "flex", flexDirection: isMobile ? "column" : "row",
+        display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}>
-        {/* Left panel */}
-        <div style={{
-          background: C.sand,
-          padding: "32px 28px",
-          display: "flex", flexDirection: "column", justifyContent: "space-between",
-          borderRight: isMobile ? "none" : `1.5px solid ${C.sandDark}`,
-          borderBottom: isMobile ? `1.5px solid ${C.sandDark}` : "none",
-          flex: isMobile ? "none" : "0 0 280px",
-          position: "relative", overflow: "hidden",
-        }}>
-          <div style={{
-            position: "absolute", top: -40, right: -40,
-            width: 160, height: 160, borderRadius: "50%",
-            background: `radial-gradient(circle, rgba(212,113,74,0.08), transparent 70%)`,
-            pointerEvents: "none",
-          }} />
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <Avatar url={profile.avatarUrl} initials={profile.avatar} size={68} fontSize={22} />
-              <div>
-                <div style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: C.bark }}>
-                  {profile.name}{profile.age ? `, ${profile.age}` : ""}
-                </div>
-                <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {profile.location}</div>
-              </div>
+        {/* Photo — 40% of card height */}
+        <div style={{ height: "40%", flexShrink: 0, position: "relative", overflow: "hidden" }}>
+          {profile.avatarUrl ? (
+            <>
+              <img src={profile.avatarUrl} style={{
+                width: "100%", height: "100%", objectFit: "cover", display: "block",
+              }} />
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "60%",
+                background: "linear-gradient(to bottom, transparent, rgba(74,55,40,0.55))",
+                pointerEvents: "none",
+              }} />
+            </>
+          ) : (
+            <div style={{
+              width: "100%", height: "100%",
+              background: C.sand,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{
+                fontFamily: "'Fraunces', serif", fontWeight: 600,
+                fontSize: 72, color: C.terracotta, lineHeight: 1,
+              }}>{profile.avatar}</span>
             </div>
-            {profile.tags?.length > 0 && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 28 }}>
-                {profile.tags.map(t => (
-                  <span key={t} style={{
-                    background: C.sandDark,
-                    border: `1px solid ${C.sandDark}`,
-                    borderRadius: 20, padding: "3px 10px",
-                    fontSize: 11, color: C.barkLight, fontWeight: 500,
-                  }}>{t}</span>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 10, fontWeight: 700 }}>WANTS TO LEARN</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {profile.seeking.map((s, i) => {
-                const isMatch = yourProfile.seeking.includes(s);
-                return (
-                  <div key={s} style={{
-                    flex: 1, borderRadius: 12, padding: "12px 6px", textAlign: "center",
-                    background: isMatch ? `rgba(212,113,74,0.10)` : C.warmWhite,
-                    border: isMatch ? `1px solid rgba(212,113,74,0.30)` : `1px solid ${C.sandDark}`,
-                  }}>
-                    {profile.seekingIcons?.[i] && <div style={{ fontSize: 20 }}>{profile.seekingIcons[i]}</div>}
-                    <div style={{ fontSize: 10, color: C.barkLight, marginTop: 4 }}>{s}</div>
-                    {isMatch && <div style={{ fontSize: 9, color: C.terracotta, marginTop: 3, fontWeight: 600 }}>You offer!</div>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Right panel */}
+        {/* Content */}
         <div style={{
-          padding: "32px 28px",
-          display: "flex", flexDirection: "column", justifyContent: "space-between",
-          flex: 1, overflow: "hidden",
-          background: C.warmWhite,
+          flex: 1, overflowY: "auto",
+          padding: "20px 24px 24px",
+          display: "flex", flexDirection: "column", gap: 14,
         }}>
+          {/* Name + location */}
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 14, fontWeight: 700 }}>OFFERING</div>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 14,
-              background: C.sand,
-              border: `1.5px solid ${C.sandDark}`,
-              borderRadius: 16, padding: "18px 20px", marginBottom: 20,
-            }}>
-              <span style={{ fontSize: 36 }}>{profile.offeringIcon}</span>
-              <div>
-                <div style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: C.bark }}>
-                  {profile.offering}
-                </div>
-                {profile.offeringLevel && (
-                  <span style={{
-                    background: `rgba(212,113,74,0.10)`, borderRadius: 20,
-                    padding: "3px 12px", fontSize: 12, color: C.terracotta, fontWeight: 500,
-                  }}>{profile.offeringLevel}</span>
-                )}
-              </div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 600, color: C.bark, lineHeight: 1.1 }}>
+              {profile.name}
             </div>
-            <p style={{ fontSize: 14, color: C.barkLight, lineHeight: 1.8 }}>{profile.offeringDesc}</p>
+            <div style={{ fontSize: 12, color: C.barkLight, marginTop: 4 }}>📍 {profile.location}</div>
           </div>
 
-          {!isMobile && (
+          {/* Match signal banner — shown when they want to learn what you offer */}
+          {profile.seeking.includes(yourProfile.offering) && (
             <div style={{
-              background: C.sand,
-              border: `1px dashed ${C.sandDark}`,
-              borderRadius: 16, padding: "20px",
-              textAlign: "center", marginTop: 20,
+              background: `rgba(212,113,74,0.08)`,
+              border: `1px solid rgba(212,113,74,0.28)`,
+              borderRadius: 12, padding: "10px 14px",
+              display: "flex", alignItems: "center", gap: 8,
             }}>
-              <div style={{ fontSize: 24, marginBottom: 6 }}>🎬</div>
-              <div style={{ fontSize: 12, color: C.barkLight }}>Skill video coming soon</div>
+              <span style={{ fontSize: 16 }}>⚡</span>
+              <span style={{ fontSize: 13, color: C.terracotta, fontWeight: 500, lineHeight: 1.4 }}>
+                {profile.name.split(" ")[0]} wants to learn {yourProfile.offering}
+              </span>
+            </div>
+          )}
+
+          {/* Offering pill */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12,
+            background: C.sand, border: `1.5px solid ${C.sandDark}`,
+            borderRadius: 14, padding: "12px 16px",
+          }}>
+            <span style={{ fontSize: 30, flexShrink: 0 }}>{profile.offeringIcon}</span>
+            <div>
+              <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 2 }}>OFFERING</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: C.bark }}>{profile.offering}</div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          {profile.bio && (
+            <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
+          )}
+
+          {/* Wants to learn chips */}
+          {profile.seeking.length > 0 && (
+            <div>
+              <div style={{ fontSize: 9, letterSpacing: 2.5, color: C.barkLight, marginBottom: 8, fontWeight: 700 }}>WANTS TO LEARN</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {profile.seeking.map((s, i) => {
+                  const isMatch = s === yourProfile.offering;
+                  return (
+                    <div key={s} style={{
+                      borderRadius: 10, padding: "7px 12px",
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: isMatch ? `rgba(212,113,74,0.10)` : C.warmWhite,
+                      border: isMatch ? `1px solid rgba(212,113,74,0.30)` : `1px solid ${C.sandDark}`,
+                    }}>
+                      {profile.seekingIcons?.[i] && (
+                        <span style={{ fontSize: 15 }}>{profile.seekingIcons[i]}</span>
+                      )}
+                      <span style={{ fontSize: 12, color: isMatch ? C.terracotta : C.barkLight, fontWeight: isMatch ? 600 : 400 }}>
+                        {s}
+                      </span>
+                      {isMatch && <span style={{ fontSize: 11, color: C.terracotta }}>⚡</span>}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
