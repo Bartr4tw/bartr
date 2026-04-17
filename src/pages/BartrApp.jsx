@@ -265,6 +265,7 @@ function MatchCard({ profile, yourProfile }) {
           border: `1px solid rgba(212,113,74,0.25)`,
           borderRadius: 100, padding: "7px 16px",
           color: C.terracotta, fontSize: 12, fontWeight: 500, cursor: "pointer",
+          minHeight: 44,
         }}>Message</button>
     </div>
   );
@@ -515,6 +516,7 @@ export default function BartrApp({ profile, session }) {
           borderRadius: 100, padding: "6px 14px",
           color: activeTab === 2 ? C.terracotta : C.barkLight,
           fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s",
+          minHeight: 44,
         }}>
           ◉ Profile
         </button>
@@ -846,6 +848,7 @@ export default function BartrApp({ profile, session }) {
               color: activeTab === i ? C.terracotta : C.barkLight,
               fontSize: 11, fontWeight: 500, cursor: "pointer",
               display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              minHeight: 44,
             }}>
               <span style={{ fontSize: 18 }}>{tab.icon}</span>
               {tab.label}

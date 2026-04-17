@@ -78,21 +78,21 @@ export default function Onboarding({ user, onComplete }) {
     padding: "13px", background: C.terracotta,
     border: "none", borderRadius: 100, color: C.cream,
     fontSize: 14, fontWeight: 500, cursor: "pointer",
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'DM Sans', sans-serif", minHeight: 44,
   };
 
   const ghostBtn = {
     padding: "13px", background: "transparent",
     border: `1.5px solid ${C.sandDark}`, borderRadius: 100,
     color: C.barkLight, fontSize: 14, fontWeight: 500, cursor: "pointer",
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'DM Sans', sans-serif", minHeight: 44,
   };
 
   return (
     <div style={{
       minHeight: "100vh", background: C.cream,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'DM Sans', sans-serif", padding: "20px",
+      display: "flex", alignItems: "flex-start", justifyContent: "center",
+      fontFamily: "'DM Sans', sans-serif", padding: "24px 16px 40px",
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
@@ -123,7 +123,7 @@ export default function Onboarding({ user, onComplete }) {
 
         <div style={{
           background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
-          borderRadius: 24, padding: "32px",
+          borderRadius: 24, padding: "24px 20px",
           boxShadow: "0 4px 20px rgba(74,55,40,0.08)",
         }}>
           {/* Step 1 */}

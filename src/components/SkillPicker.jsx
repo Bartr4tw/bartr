@@ -177,7 +177,8 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
             onClick={() => { setActiveCategory(cat); setSearch(""); setNotice(null); }}
             style={{
               flexShrink: 0,
-              padding: "5px 12px",
+              padding: "8px 12px",
+              minHeight: 36,
               borderRadius: 20,
               border: activeCategory === cat && !trimmed
                 ? "1px solid rgba(234,179,8,0.5)"
@@ -206,11 +207,11 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
           value={search}
           onChange={(e) => { setSearch(e.target.value); setNotice(null); }}
           style={{
-            width: "100%", padding: "10px 16px 10px 38px",
+            width: "100%", padding: "12px 16px 12px 38px",
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 12, color: "#f9fafb", fontSize: 13,
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'DM Sans', sans-serif", minHeight: 44,
           }}
         />
       </div>
@@ -236,7 +237,7 @@ export default function SkillPicker({ mode, skills, value, onChange, exclude }) 
           disabled={adding}
           style={{
             width: "100%", marginBottom: 10,
-            padding: "10px 16px",
+            padding: "12px 16px", minHeight: 44,
             background: "rgba(234,179,8,0.06)",
             border: "1px dashed rgba(234,179,8,0.3)",
             borderRadius: 12, cursor: adding ? "not-allowed" : "pointer",

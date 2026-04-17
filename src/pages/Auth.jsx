@@ -115,7 +115,7 @@ export default function Auth() {
         </div>
 
         {/* Form */}
-        <div style={{ padding: "28px 32px 32px" }}>
+        <div style={{ padding: "24px 24px 28px" }}>
           {/* Toggle */}
           {mode !== "forgot" && (
             <div style={{
@@ -125,7 +125,7 @@ export default function Auth() {
             }}>
               {["login", "signup"].map(m => (
                 <button key={m} onClick={() => { setMode(m); setError(""); setMessage(""); }} style={{
-                  flex: 1, padding: "8px",
+                  flex: 1, padding: "10px",
                   background: mode === m ? C.warmWhite : "transparent",
                   border: mode === m ? `1px solid ${C.sandDark}` : "1px solid transparent",
                   borderRadius: 100, color: mode === m ? C.bark : C.barkLight,
@@ -220,7 +220,7 @@ export default function Auth() {
             color: C.cream, fontSize: 14, fontWeight: 500,
             cursor: loading ? "not-allowed" : "pointer",
             opacity: loading ? 0.7 : 1, transition: "opacity 0.2s",
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'DM Sans', sans-serif", minHeight: 44,
           }}>
             {loading ? "Loading..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}
           </button>

@@ -143,7 +143,7 @@ export default function ResetPassword() {
                 color: C.cream, fontSize: 14, fontWeight: 500,
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.7 : 1,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'DM Sans', sans-serif", minHeight: 44,
               }}>
                 {loading ? "Saving..." : "Set new password"}
               </button>

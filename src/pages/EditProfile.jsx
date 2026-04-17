@@ -188,7 +188,9 @@ export default function EditProfile() {
       }}>
         <button onClick={() => navigate("/app")} style={{
           background: "transparent", border: "none",
-          color: C.barkLight, fontSize: 20, cursor: "pointer", padding: 4,
+          color: C.barkLight, fontSize: 20, cursor: "pointer",
+          padding: "0 8px", minWidth: 44, minHeight: 44,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>‹</button>
         <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark }}>
           Edit Profile
@@ -198,6 +200,7 @@ export default function EditProfile() {
           padding: "8px 18px", color: C.cream,
           fontSize: 13, fontWeight: 500, cursor: saving ? "not-allowed" : "pointer",
           opacity: saving ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif",
+          minHeight: 44,
         }}>{saving ? "Saving..." : "Save"}</button>
       </div>
 
@@ -309,7 +312,7 @@ export default function EditProfile() {
           fontSize: 15, fontWeight: 500,
           cursor: saving ? "not-allowed" : "pointer",
           opacity: saving ? 0.7 : 1,
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'DM Sans', sans-serif", minHeight: 44,
         }}>{saving ? "Saving..." : "Save Changes"}</button>
       </div>
     </div>

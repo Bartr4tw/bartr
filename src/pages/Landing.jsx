@@ -40,7 +40,6 @@ const STORIES = [
   { from: "🏋️", fromLabel: "Training", to: "🎨", toLabel: "Painting", names: "Jordan & Lea" },
 ];
 
-// Color tokens
 const C = {
   sand: "#F5EFE0",
   sandDark: "#EDE3CC",
@@ -53,6 +52,16 @@ const C = {
   cream: "#FAF6EE",
   warmWhite: "#FDFAF4",
 };
+
+function useWindowWidth() {
+  const [width, setWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
+  useEffect(() => {
+    const handle = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", handle);
+    return () => window.removeEventListener("resize", handle);
+  }, []);
+  return width;
+}
 
 function useInView(threshold = 0.15) {
   const ref = useRef(null);
@@ -128,6 +137,9 @@ export default function BartrLanding() {
   const [heroVisible, setHeroVisible] = useState(false);
   const [howRef, howInView] = useInView();
   const [manifestoRef, manifestoInView] = useInView();
+  const width = useWindowWidth();
+  const isMobile = width < 768;
+  const isTablet = width >= 768 && width < 1024;
 
   useEffect(() => {
     setTimeout(() => setHeroVisible(true), 100);
@@ -141,6 +153,9 @@ export default function BartrLanding() {
 
   const marqueeSkills = [...MARQUEE_SKILLS, ...MARQUEE_SKILLS];
 
+  const sectionPadH = isMobile ? "20px" : isTablet ? "40px" : "64px";
+  const sectionPadV = isMobile ? "60px" : "100px";
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -152,7 +167,7 @@ export default function BartrLanding() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
-        h1, h2, h3, p { color: inherit; }
+        h1, h2, h3, p { color: inherit; margin: 0; }
         ::selection { background: rgba(192,122,82,0.2); }
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
@@ -173,28 +188,35 @@ export default function BartrLanding() {
           box-shadow: 0 12px 32px rgba(74,55,40,0.09) !important;
         }
         .marquee-track:hover { animation-play-state: paused; }
+        a { -webkit-tap-highlight-color: transparent; }
+        button { -webkit-tap-highlight-color: transparent; }
       `}</style>
 
       {/* Nav */}
       <nav style={{
         position: "sticky", top: 0, left: 0, right: 0, zIndex: 50,
-        padding: "20px 48px",
+        padding: isMobile ? "16px 20px" : "20px 48px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         background: C.warmWhite,
         borderBottom: `1px solid ${C.sandDark}`,
       }}>
-        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600, letterSpacing: -0.5, color: C.clayDeep }}>
+        <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 22 : 26, fontWeight: 600, letterSpacing: -0.5, color: C.clayDeep }}>
           bartr<span style={{ color: C.terracotta }}>.</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          <a href="#how" style={{ fontSize: 13, color: C.barkLight, textDecoration: "none", fontWeight: 500 }}>How it works</a>
-          <a href="#mission" style={{ fontSize: 13, color: C.barkLight, textDecoration: "none", fontWeight: 500 }}>Mission</a>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 32 }}>
+          {!isMobile && (
+            <>
+              <a href="#how" style={{ fontSize: 13, color: C.barkLight, textDecoration: "none", fontWeight: 500 }}>How it works</a>
+              <a href="#mission" style={{ fontSize: 13, color: C.barkLight, textDecoration: "none", fontWeight: 500 }}>Mission</a>
+            </>
+          )}
           <a href="/auth" style={{ textDecoration: "none" }}>
             <button style={{
               background: C.clay, border: "none",
-              borderRadius: 100, padding: "8px 20px",
+              borderRadius: 100, padding: isMobile ? "10px 20px" : "8px 20px",
               fontSize: 13, fontWeight: 500, color: C.cream,
               cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              minHeight: 44,
             }}>Get started</button>
           </a>
         </div>
@@ -202,19 +224,19 @@ export default function BartrLanding() {
 
       {/* Hero */}
       <section style={{
-        padding: "80px 64px 64px",
+        padding: isMobile ? "40px 20px 48px" : isTablet ? "60px 40px 56px" : "80px 64px 64px",
         position: "relative", overflow: "hidden",
       }}>
         {/* Blobs */}
         <div style={{
-          position: "absolute", width: 520, height: 520,
+          position: "absolute", width: isMobile ? 280 : 520, height: isMobile ? 280 : 520,
           background: C.terracotta, opacity: 0.1,
           top: -150, right: -100,
           borderRadius: "60% 40% 70% 30%/50% 60% 40% 50%",
           pointerEvents: "none",
         }} />
         <div style={{
-          position: "absolute", width: 260, height: 260,
+          position: "absolute", width: isMobile ? 140 : 260, height: isMobile ? 140 : 260,
           background: C.moss, opacity: 0.1,
           bottom: -60, left: -50,
           borderRadius: "40% 60% 30% 70%/60% 40% 60% 40%",
@@ -226,8 +248,10 @@ export default function BartrLanding() {
           transform: heroVisible ? "translateY(0)" : "translateY(24px)",
           transition: "all 0.8s cubic-bezier(.34,1.56,.64,1)",
           position: "relative",
-          display: "grid", gridTemplateColumns: "1fr auto",
-          alignItems: "center", gap: 64,
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr auto",
+          alignItems: "center",
+          gap: isMobile ? 40 : 64,
           maxWidth: 1100,
         }}>
           {/* Left — text content */}
@@ -236,34 +260,34 @@ export default function BartrLanding() {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               background: C.sand, border: `1px solid ${C.sandDark}`,
-              borderRadius: 100, padding: "6px 16px", marginBottom: 32,
+              borderRadius: 100, padding: "6px 16px", marginBottom: isMobile ? 24 : 32,
             }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.moss, animation: "float 2s ease-in-out infinite" }} />
-              <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500, letterSpacing: 1, textTransform: "uppercase" }}>Invite-only · New York</span>
+              <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500, letterSpacing: 1, textTransform: "uppercase" }}>NYC · Skill Trading</span>
             </div>
 
             {/* Staggered headline */}
-            <h1 style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: 28 }}>
+            <h1 style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: isMobile ? 20 : 28 }}>
               <span style={{
                 display: "block",
                 fontFamily: "'Fraunces', serif",
-                fontWeight: 600, letterSpacing: -2, lineHeight: 1.08,
-                fontSize: "clamp(40px, 6vw, 80px)",
+                fontWeight: 600, letterSpacing: -1.5, lineHeight: 1.08,
+                fontSize: isMobile ? "clamp(34px, 9vw, 48px)" : "clamp(40px, 6vw, 80px)",
                 color: C.bark,
               }}>Teach what you know.</span>
               <span style={{
                 display: "block",
                 fontFamily: "'Fraunces', serif",
-                fontWeight: 600, letterSpacing: -2, lineHeight: 1.08,
-                fontSize: "clamp(40px, 6vw, 80px)",
+                fontWeight: 600, letterSpacing: -1.5, lineHeight: 1.08,
+                fontSize: isMobile ? "clamp(34px, 9vw, 48px)" : "clamp(40px, 6vw, 80px)",
                 color: C.terracotta, fontStyle: "italic",
-                marginLeft: "2.6ch",
+                marginLeft: isMobile ? "1.5ch" : "2.6ch",
               }}>Learn what you don't.</span>
             </h1>
 
             <p style={{
-              fontSize: 16, color: C.barkLight, lineHeight: 1.7,
-              maxWidth: 420, marginBottom: 36,
+              fontSize: isMobile ? 15 : 16, color: C.barkLight, lineHeight: 1.7,
+              maxWidth: 420, marginBottom: isMobile ? 28 : 36,
               opacity: heroVisible ? 1 : 0,
               transition: "opacity 0.8s ease 0.3s",
             }}>
@@ -275,20 +299,21 @@ export default function BartrLanding() {
             <div style={{
               opacity: heroVisible ? 1 : 0,
               transition: "opacity 0.8s ease 0.5s",
-              marginBottom: 48,
+              marginBottom: isMobile ? 36 : 48,
             }}>
               <a href="/auth" style={{ textDecoration: "none" }}>
                 <button style={{
                   background: C.terracotta, border: "none",
-                  borderRadius: 100, padding: "13px 32px",
+                  borderRadius: 100, padding: isMobile ? "14px 32px" : "13px 32px",
                   fontSize: 15, fontWeight: 500, color: C.cream,
                   cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                  minHeight: 44,
                 }}>Get started →</button>
               </a>
             </div>
 
             {/* Skill pills */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, maxWidth: 520 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxWidth: isMobile ? "100%" : 520 }}>
               {SKILLS.map((s, i) => (
                 <div key={s.label} className="pill-hover">
                   <AnimatedSkillPill icon={s.icon} label={s.label} delay={600 + i * 60} />
@@ -297,57 +322,57 @@ export default function BartrLanding() {
             </div>
           </div>
 
-          {/* Right — card stack */}
-          <div style={{ position: "relative", width: 260, height: 360, flexShrink: 0 }}>
-            {/* Back cards */}
-            <div style={{
-              position: "absolute", width: 248, borderRadius: 22,
-              padding: "1.5rem", background: C.sand,
-              border: `1.5px solid ${C.sandDark}`,
-              boxShadow: `0 8px 28px rgba(74,55,40,0.1)`,
-              top: 18, left: 18, transform: "rotate(5deg)", zIndex: 1,
-              height: 300,
-            }} />
-            <div style={{
-              position: "absolute", width: 248, borderRadius: 22,
-              padding: "1.5rem", background: "#EEE5D2",
-              border: `1.5px solid ${C.sandDark}`,
-              boxShadow: `0 8px 28px rgba(74,55,40,0.1)`,
-              top: 9, left: 9, transform: "rotate(2deg)", zIndex: 2,
-              height: 300,
-            }} />
-            {/* Front card */}
-            <div style={{
-              position: "absolute", width: 248, borderRadius: 22,
-              padding: "1.5rem", background: C.warmWhite,
-              border: `1.5px solid ${C.sandDark}`,
-              boxShadow: `0 8px 28px rgba(74,55,40,0.12)`,
-              top: 0, left: 0, transform: "rotate(-1deg)", zIndex: 3,
-            }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🎸</div>
-              <div style={{ fontSize: 10, fontWeight: 500, textTransform: "uppercase", letterSpacing: 1, color: C.clay, marginBottom: 4 }}>Offering</div>
-              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>Guitar lessons</div>
-              <div style={{ fontSize: 12, color: C.barkLight, lineHeight: 1.5, marginBottom: 16 }}>
-                Acoustic fingerpicking, chord theory, and songwriting basics. Beginner-friendly.
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: "50%",
-                  background: C.sandDark,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 600, color: C.clayDeep,
-                }}>MA</div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: C.bark }}>Marcus A.</div>
-                  <div style={{ fontSize: 11, color: C.barkLight }}>Brooklyn, NY</div>
+          {/* Right — card stack (hidden on mobile to avoid layout issues) */}
+          {!isMobile && (
+            <div style={{ position: "relative", width: isTablet ? 220 : 260, height: isTablet ? 310 : 360, flexShrink: 0 }}>
+              <div style={{
+                position: "absolute", width: isTablet ? 208 : 248, borderRadius: 22,
+                padding: "1.5rem", background: C.sand,
+                border: `1.5px solid ${C.sandDark}`,
+                boxShadow: `0 8px 28px rgba(74,55,40,0.1)`,
+                top: 18, left: 18, transform: "rotate(5deg)", zIndex: 1,
+                height: isTablet ? 256 : 300,
+              }} />
+              <div style={{
+                position: "absolute", width: isTablet ? 208 : 248, borderRadius: 22,
+                padding: "1.5rem", background: "#EEE5D2",
+                border: `1.5px solid ${C.sandDark}`,
+                boxShadow: `0 8px 28px rgba(74,55,40,0.1)`,
+                top: 9, left: 9, transform: "rotate(2deg)", zIndex: 2,
+                height: isTablet ? 256 : 300,
+              }} />
+              <div style={{
+                position: "absolute", width: isTablet ? 208 : 248, borderRadius: 22,
+                padding: "1.5rem", background: C.warmWhite,
+                border: `1.5px solid ${C.sandDark}`,
+                boxShadow: `0 8px 28px rgba(74,55,40,0.12)`,
+                top: 0, left: 0, transform: "rotate(-1deg)", zIndex: 3,
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎸</div>
+                <div style={{ fontSize: 10, fontWeight: 500, textTransform: "uppercase", letterSpacing: 1, color: C.clay, marginBottom: 4 }}>Offering</div>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: isTablet ? 17 : 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>Guitar lessons</div>
+                <div style={{ fontSize: 12, color: C.barkLight, lineHeight: 1.5, marginBottom: 16 }}>
+                  Acoustic fingerpicking, chord theory, and songwriting basics. Beginner-friendly.
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: "50%",
+                    background: C.sandDark,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 600, color: C.clayDeep,
+                  }}>MA</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: C.bark }}>Marcus A.</div>
+                    <div style={{ fontSize: 11, color: C.barkLight }}>Brooklyn, NY</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: "#B0A090" }}>← Pass</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: C.moss }}>Match →</span>
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: "#B0A090" }}>← Pass</span>
-                <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: C.moss }}>Match →</span>
-              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -356,8 +381,10 @@ export default function BartrLanding() {
         background: C.sand,
         borderTop: `1px solid ${C.sandDark}`,
         borderBottom: `1px solid ${C.sandDark}`,
-        padding: "28px 64px",
-        display: "flex", justifyContent: "center", gap: "6rem",
+        padding: isMobile ? "24px 20px" : "28px 64px",
+        display: "flex", justifyContent: "center",
+        flexWrap: "wrap",
+        gap: isMobile ? "1.5rem 3rem" : "6rem",
       }}>
         {[
           { num: "4,200+", label: "Skills listed" },
@@ -365,24 +392,24 @@ export default function BartrLanding() {
           { num: "92%",    label: "Match satisfaction" },
         ].map(({ num, label }) => (
           <div key={label} style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: C.clayDeep }}>{num}</div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 26 : 32, fontWeight: 600, color: C.clayDeep }}>{num}</div>
             <div style={{ fontSize: 13, color: C.barkLight, marginTop: 2 }}>{label}</div>
           </div>
         ))}
       </div>
 
       {/* How it works */}
-      <section id="how" style={{ padding: "100px 64px", maxWidth: 1000, margin: "0 auto" }}>
+      <section id="how" style={{ padding: `${sectionPadV} ${sectionPadH}`, maxWidth: 1000, margin: "0 auto" }}>
         <div ref={howRef} style={{
           opacity: howInView ? 1 : 0,
           transform: howInView ? "translateY(0)" : "translateY(30px)",
           transition: "all 0.7s ease",
         }}>
-          <div style={{ marginBottom: 56 }}>
+          <div style={{ marginBottom: isMobile ? 36 : 56 }}>
             <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 12, textTransform: "uppercase" }}>How it works</div>
             <h2 style={{
               fontFamily: "'Fraunces', serif",
-              fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 600,
+              fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 600,
               lineHeight: 1.15, color: C.bark, letterSpacing: -0.5,
             }}>
               Three steps to your{" "}
@@ -390,12 +417,12 @@ export default function BartrLanding() {
             </h2>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
             {steps.map((step, i) => (
               <div key={i} className="step-card-hover" style={{
                 background: C.warmWhite,
                 border: `1.5px solid ${C.sandDark}`,
-                borderRadius: 20, padding: "32px 28px",
+                borderRadius: 20, padding: isMobile ? "24px 20px" : "32px 28px",
                 boxShadow: "0 4px 16px rgba(74,55,40,0.06)",
                 opacity: howInView ? 1 : 0,
                 transform: howInView ? "translateY(0)" : "translateY(20px)",
@@ -445,21 +472,21 @@ export default function BartrLanding() {
       </div>
 
       {/* Match stories */}
-      <section style={{ padding: "80px 64px 80px", maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ marginBottom: 48 }}>
+      <section style={{ padding: `${isMobile ? "60px" : "80px"} ${sectionPadH}`, maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ marginBottom: isMobile ? 32 : 48 }}>
           <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 12, textTransform: "uppercase" }}>Real trades</div>
-          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, color: C.bark, letterSpacing: -0.5 }}>
+          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(24px, 4vw, 42px)", fontWeight: 600, color: C.bark, letterSpacing: -0.5 }}>
             Skills find each other
           </h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           {STORIES.map((s, i) => <StoryCard key={i} story={s} delay={i * 120} />)}
         </div>
       </section>
 
       {/* Manifesto */}
       <section id="mission" style={{
-        padding: "100px 64px",
+        padding: `${isMobile ? "60px" : "100px"} ${sectionPadH}`,
         background: C.sand,
         borderTop: `1px solid ${C.sandDark}`,
         borderBottom: `1px solid ${C.sandDark}`,
@@ -473,7 +500,7 @@ export default function BartrLanding() {
           <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 24, textTransform: "uppercase" }}>Why Bartr exists</div>
           <p style={{
             fontFamily: "'Fraunces', serif",
-            fontSize: "clamp(22px, 3.5vw, 34px)",
+            fontSize: "clamp(20px, 3.5vw, 34px)",
             fontWeight: 600, lineHeight: 1.4, color: C.bark,
             marginBottom: 32,
           }}>
@@ -482,7 +509,7 @@ export default function BartrLanding() {
             They're waiting to be shared."
           </p>
           <div style={{ width: 40, height: 2, background: C.clay, marginBottom: 32 }} />
-          <p style={{ fontSize: 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 520 }}>
+          <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 520 }}>
             Bartr is built on the belief that every person has something worth teaching,
             and something worth learning. We're not replacing human skill — we're celebrating it.
           </p>
@@ -490,12 +517,15 @@ export default function BartrLanding() {
       </section>
 
       {/* Final CTA */}
-      <section style={{ padding: "64px 40px" }}>
+      <section style={{ padding: isMobile ? "24px 16px" : "64px 40px" }}>
         <div style={{
           background: C.clay,
-          borderRadius: 28, padding: "64px 56px",
+          borderRadius: isMobile ? 20 : 28,
+          padding: isMobile ? "40px 24px" : isTablet ? "48px 40px" : "64px 56px",
           position: "relative", overflow: "hidden",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 40,
+          display: "flex", flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "flex-start" : "center",
+          justifyContent: "space-between", gap: isMobile ? 28 : 40,
         }}>
           <div style={{
             position: "absolute", width: 320, height: 320,
@@ -514,25 +544,26 @@ export default function BartrLanding() {
           <div style={{ position: "relative", zIndex: 1 }}>
             <h2 style={{
               fontFamily: "'Fraunces', serif",
-              fontSize: "clamp(32px, 5vw, 52px)",
+              fontSize: isMobile ? "clamp(28px, 8vw, 40px)" : "clamp(32px, 5vw, 52px)",
               fontWeight: 600, lineHeight: 1.15, marginBottom: 16,
               letterSpacing: -0.5, color: C.cream,
             }}>
               Ready to make your{" "}
               <em style={{ fontStyle: "italic", opacity: 0.85 }}>first swap?</em>
             </h2>
-            <p style={{ fontSize: 15, color: "rgba(250,246,238,0.72)", lineHeight: 1.6, maxWidth: 400 }}>
-              Invite-only. New York City. Have an invite code? You're in.
+            <p style={{ fontSize: isMobile ? 14 : 15, color: "rgba(250,246,238,0.72)", lineHeight: 1.6, maxWidth: 400 }}>
+              New York City. Your skills are worth something.
             </p>
           </div>
-          <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
+          <div style={{ position: "relative", zIndex: 1, flexShrink: 0, width: isMobile ? "100%" : "auto" }}>
             <a href="/auth" style={{ textDecoration: "none" }}>
               <button style={{
                 background: C.cream, border: "none",
                 borderRadius: 100, padding: "14px 32px",
                 fontSize: 15, fontWeight: 500, color: C.clayDeep,
                 cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                whiteSpace: "nowrap",
+                whiteSpace: "nowrap", minHeight: 44,
+                width: isMobile ? "100%" : "auto",
               }}>Get started →</button>
             </a>
           </div>
@@ -541,9 +572,14 @@ export default function BartrLanding() {
 
       {/* Footer */}
       <footer style={{
-        padding: "28px 48px",
+        padding: isMobile ? "24px 20px" : "28px 48px",
         borderTop: `1px solid ${C.sandDark}`,
-        display: "flex", justifyContent: "space-between", alignItems: "center",
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: isMobile ? 8 : 0,
+        textAlign: isMobile ? "center" : "left",
       }}>
         <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.clayDeep }}>
           bartr<span style={{ color: C.terracotta }}>.</span>

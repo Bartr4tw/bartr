@@ -165,7 +165,8 @@ export default function Chat() {
           style={{
             background: "transparent", border: "none",
             color: C.barkLight, fontSize: 20, cursor: "pointer",
-            display: "flex", alignItems: "center", padding: 4,
+            display: "flex", alignItems: "center",
+            padding: "0 8px", minWidth: 44, minHeight: 44,
           }}
         >‹</button>
 
@@ -285,7 +286,7 @@ export default function Chat() {
           onClick={sendMessage}
           disabled={!input.trim()}
           style={{
-            width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+            width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
             background: input.trim() ? C.terracotta : C.sandDark,
             border: "none", cursor: input.trim() ? "pointer" : "default",
             display: "flex", alignItems: "center", justifyContent: "center",
