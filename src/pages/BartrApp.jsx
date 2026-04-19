@@ -268,13 +268,13 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
           {profile.seeking.includes(yourProfile.offering) && (
             <div style={{
               margin: "12px 16px 0",
-              background: `rgba(212,113,74,0.08)`,
-              border: `1px solid rgba(212,113,74,0.28)`,
+              background: `rgba(90,158,111,0.08)`,
+              border: `1px solid rgba(90,158,111,0.28)`,
               borderRadius: 12, padding: "10px 14px",
               display: "flex", alignItems: "center", gap: 8,
             }}>
               <span style={{ fontSize: 15 }}>⚡</span>
-              <span style={{ fontSize: 13, color: C.terracotta, fontWeight: 500, lineHeight: 1.4 }}>
+              <span style={{ fontSize: 13, color: "#5a9e6f", fontWeight: 500, lineHeight: 1.4 }}>
                 {profile.name.split(" ")[0]} wants to learn {yourProfile.offering}
               </span>
             </div>
@@ -389,17 +389,17 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
                   return (
                     <div key={s} style={{
                       borderRadius: 10, padding: "10px 6px", textAlign: "center",
-                      background: isMatch ? `rgba(212,113,74,0.10)` : C.warmWhite,
-                      border: isMatch ? `1.5px solid rgba(212,113,74,0.35)` : `1px solid ${C.sandDark}`,
+                      background: isMatch ? `rgba(90,158,111,0.10)` : C.warmWhite,
+                      border: isMatch ? `1.5px solid rgba(90,158,111,0.35)` : `1px solid ${C.sandDark}`,
                     }}>
                       {profile.seekingIcons?.[i] && (
                         <div style={{ fontSize: 20, marginBottom: 4 }}>{profile.seekingIcons[i]}</div>
                       )}
-                      <div style={{ fontSize: 11, color: isMatch ? C.terracotta : C.barkLight, fontWeight: isMatch ? 600 : 400, lineHeight: 1.3 }}>
+                      <div style={{ fontSize: 11, color: isMatch ? "#5a9e6f" : C.barkLight, fontWeight: isMatch ? 600 : 400, lineHeight: 1.3 }}>
                         {s}
                       </div>
                       {isMatch && (
-                        <div style={{ fontSize: 9, color: C.terracotta, marginTop: 3, fontWeight: 700 }}>you offer!</div>
+                        <div style={{ fontSize: 9, color: "#5a9e6f", marginTop: 3, fontWeight: 700 }}>you offer!</div>
                       )}
                     </div>
                   );
