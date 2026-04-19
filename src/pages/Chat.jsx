@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 
 const C = {
@@ -13,11 +13,12 @@ const C = {
 export default function Chat() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState(null);
   const [sessionToken, setSessionToken] = useState(null);
   const [otherProfile, setOtherProfile] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(searchParams.get("prefillMessage") || "");
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
 
