@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAuthHeaders } from "../lib/supabase.js";
 import { SKILLS } from "../lib/skillsData.js";
 
 const C = {
@@ -33,7 +34,23 @@ function transformProfile(row) {
     availability: Array.isArray(row.availability) ? row.availability : [],
     swapPreference: Array.isArray(row.swap_preference) ? row.swap_preference : [],
     swapsCompleted: row.swaps_completed || 0,
+    tradeRequest: null,
   };
+}
+
+async function enrichWithTradeRequests(profiles) {
+  if (!profiles.length) return profiles;
+  const ids = profiles.map((p) => p.id).join(",");
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=in.(${ids})&status=eq.open`,
+    { headers }
+  );
+  const rows = await res.json();
+  if (!Array.isArray(rows)) return profiles;
+  const byUserId = {};
+  rows.forEach((r) => { byUserId[r.user_id] = r; });
+  return profiles.map((p) => ({ ...p, tradeRequest: byUserId[p.id] || null }));
 }
 
 function Avatar({ url, initials, size, fontSize, border }) {
@@ -74,7 +91,7 @@ function useWindowWidth() {
   return width;
 }
 
-function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
+function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) {
   const [drag, setDrag] = useState({ x: 0, dragging: false, startX: 0 });
 
   const handleMouseDown = (e) => setDrag({ x: 0, dragging: true, startX: e.clientX });
@@ -281,6 +298,55 @@ function SwipeCard({ profile, yourProfile, onSwipe, isMobile }) {
             )}
           </div>
 
+          {/* Trade Request */}
+          {profile.tradeRequest && (
+            <div style={{ margin: "12px 16px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700 }}>OPEN TRADE REQUEST</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#5a9e6f" }} />
+                  <span style={{ fontSize: 10, color: "#5a9e6f", fontWeight: 600 }}>Accepting responses</span>
+                </div>
+              </div>
+              <div style={{
+                background: "#FDF6EE", border: `1.5px solid ${C.clay}`,
+                borderRadius: 12, padding: "12px 14px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: profile.tradeRequest.note ? 10 : 12 }}>
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, color: C.barkLight, marginBottom: 4 }}>{profile.name.split(" ")[0]} offers</div>
+                    <div style={{ fontSize: 22 }}>{profile.tradeRequest.offering_icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.bark, marginTop: 3 }}>{profile.tradeRequest.offering_skill}</div>
+                    <div style={{ fontSize: 11, color: C.barkLight }}>{profile.tradeRequest.offering_qty} {profile.tradeRequest.offering_unit}</div>
+                  </div>
+                  <div style={{ fontSize: 20, color: C.clay, fontWeight: 700, flexShrink: 0 }}>⇄</div>
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, color: C.barkLight, marginBottom: 4 }}>{profile.name.split(" ")[0]} wants</div>
+                    <div style={{ fontSize: 22 }}>{profile.tradeRequest.wanting_icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.bark, marginTop: 3 }}>{profile.tradeRequest.wanting_skill}</div>
+                    <div style={{ fontSize: 11, color: C.barkLight }}>{profile.tradeRequest.wanting_qty} {profile.tradeRequest.wanting_unit}</div>
+                  </div>
+                </div>
+                {profile.tradeRequest.note && (
+                  <div style={{ fontSize: 12, color: C.barkLight, fontStyle: "italic", marginBottom: 10 }}>
+                    {profile.tradeRequest.note}
+                  </div>
+                )}
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onTradeRespond(profile.tradeRequest); }}
+                  style={{
+                    width: "100%", padding: "9px", minHeight: 40,
+                    background: C.terracotta, border: "none", borderRadius: 100,
+                    color: C.cream, fontSize: 13, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >Respond →</button>
+              </div>
+            </div>
+          )}
+
           {/* Availability */}
           {profile.availability?.length > 0 && (
             <div style={{ margin: "12px 16px 0" }}>
@@ -430,7 +496,9 @@ export default function BartrApp({ profile, session }) {
           url += `&id=not.in.(${excludeIds.join(",")})`;
         }
         const rows = await fetch(url, { headers: authHeaders }).then((r) => r.json());
-        setProfiles((rows || []).map(transformProfile));
+        const transformed = (Array.isArray(rows) ? rows : []).map(transformProfile);
+        const enriched = await enrichWithTradeRequests(transformed);
+        setProfiles(enriched);
         setProfilesLoading(false);
       })
       .catch(() => setProfilesLoading(false));
@@ -502,7 +570,9 @@ export default function BartrApp({ profile, session }) {
       { headers: authHeaders }
     ).then((r) => r.json());
 
-    setProfiles((Array.isArray(rows) ? rows : []).map(transformProfile));
+    const transformed = (Array.isArray(rows) ? rows : []).map(transformProfile);
+    const enriched = await enrichWithTradeRequests(transformed);
+    setProfiles(enriched);
     setSecondChance(true);
     setSecondChanceLoading(false);
   };
@@ -658,7 +728,19 @@ export default function BartrApp({ profile, session }) {
                       }} />
                     )}
                     <div style={{ position: "absolute", inset: 0 }}>
-                      <SwipeCard profile={profiles[0]} yourProfile={YOUR_PROFILE} onSwipe={handleSwipe} isMobile={isMobile} />
+                      <SwipeCard
+                        profile={profiles[0]}
+                        yourProfile={YOUR_PROFILE}
+                        onSwipe={handleSwipe}
+                        isMobile={isMobile}
+                        onTradeRespond={(tr) => {
+                          const msg = encodeURIComponent(
+                            `Hey! I saw your trade request — I can help with ${tr.wanting_skill}. Would you be open to swapping for ${tr.offering_skill}?`
+                          );
+                          handleSwipe("right");
+                          navigate(`/chat/${profiles[0].id}?prefillMessage=${msg}`);
+                        }}
+                      />
                     </div>
                   </div>
 
