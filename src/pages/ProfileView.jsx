@@ -20,6 +20,7 @@ export default function ProfileView() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [tradeRequest, setTradeRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isSelf, setIsSelf] = useState(false);
@@ -29,16 +30,18 @@ export default function ProfileView() {
       if (!session) { window.location.href = "/auth"; return; }
       setIsSelf(session.user.id === userId);
       const headers = await getAuthHeaders();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
-        { headers }
-      );
-      const rows = await res.json();
+      const [profileRes, tradeRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, { headers }),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=eq.${userId}&status=eq.open&limit=1`, { headers }),
+      ]);
+      const rows = await profileRes.json();
       if (!Array.isArray(rows) || !rows[0]) {
         setNotFound(true);
       } else {
         setProfile(rows[0]);
       }
+      const trRows = await tradeRes.json();
+      if (Array.isArray(trRows) && trRows[0]) setTradeRequest(trRows[0]);
       setLoading(false);
     });
   }, [userId]);
@@ -268,6 +271,62 @@ export default function ProfileView() {
             </p>
           )}
         </div>
+
+        {/* Trade Request */}
+        {tradeRequest && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5, fontWeight: 600, textTransform: "uppercase" }}>
+                Open Trade Request
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#5a9e6f" }} />
+                <span style={{ fontSize: 10, color: "#5a9e6f", fontWeight: 600 }}>Accepting responses</span>
+              </div>
+            </div>
+            <div style={{
+              background: "#FDF6EE", border: `1.5px solid ${C.clay}`,
+              borderRadius: 14, padding: "14px 16px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: tradeRequest.note ? 10 : 14 }}>
+                <div style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: C.barkLight, marginBottom: 4 }}>{firstName} offers</div>
+                  <div style={{ fontSize: 26 }}>{tradeRequest.offering_icon}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginTop: 3 }}>{tradeRequest.offering_skill}</div>
+                  <div style={{ fontSize: 12, color: C.barkLight }}>{tradeRequest.offering_qty} {tradeRequest.offering_unit}</div>
+                </div>
+                <div style={{ fontSize: 22, color: C.clay, fontWeight: 700, flexShrink: 0 }}>⇄</div>
+                <div style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: C.barkLight, marginBottom: 4 }}>{firstName} wants</div>
+                  <div style={{ fontSize: 26 }}>{tradeRequest.wanting_icon}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginTop: 3 }}>{tradeRequest.wanting_skill}</div>
+                  <div style={{ fontSize: 12, color: C.barkLight }}>{tradeRequest.wanting_qty} {tradeRequest.wanting_unit}</div>
+                </div>
+              </div>
+              {tradeRequest.note && (
+                <div style={{ fontSize: 13, color: C.barkLight, fontStyle: "italic", marginBottom: 14 }}>
+                  {tradeRequest.note}
+                </div>
+              )}
+              {!isSelf && (
+                <button
+                  onClick={() => {
+                    const msg = encodeURIComponent(
+                      `Hey! I saw your trade request — I can help with ${tradeRequest.wanting_skill}. Would you be open to swapping for ${tradeRequest.offering_skill}?`
+                    );
+                    navigate(`/chat/${userId}?prefillMessage=${msg}`);
+                  }}
+                  style={{
+                    width: "100%", padding: "10px", minHeight: 44,
+                    background: C.terracotta, border: "none", borderRadius: 100,
+                    color: C.cream, fontSize: 14, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >Respond →</button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Wants to learn */}
         {seekingLabels.length > 0 && (
