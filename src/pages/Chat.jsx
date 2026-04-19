@@ -21,6 +21,7 @@ export default function Chat() {
   const [input, setInput] = useState(searchParams.get("prefillMessage") || "");
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
+  const matchEnsured = useRef(false);
 
   // Get current session
   useEffect(() => {
@@ -107,6 +108,26 @@ export default function Chat() {
       created_at: new Date().toISOString(),
     };
     setMessages((m) => [...m, optimistic]);
+
+    // Ensure a match record exists between these two users so the
+    // conversation appears in both users' Matches tab. Uses the same
+    // user_a < user_b dedup convention as the swipe match logic.
+    // Only runs once per chat session; silently ignores if already exists.
+    if (!matchEnsured.current) {
+      matchEnsured.current = true;
+      const user_a = currentUser.id < userId ? currentUser.id : userId;
+      const user_b = currentUser.id < userId ? userId : currentUser.id;
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
+        method: "POST",
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${sessionToken}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=ignore-duplicates,return=minimal",
+        },
+        body: JSON.stringify({ user_a, user_b }),
+      });
+    }
 
     await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages`, {
       method: "POST",
