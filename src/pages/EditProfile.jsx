@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase.js";
+import { supabase, getAuthHeaders } from "../lib/supabase.js";
 import { NEIGHBORHOODS, SKILLS } from "../lib/skillsData.js";
 import SkillPicker from "../components/SkillPicker.jsx";
 
@@ -54,6 +54,19 @@ export default function EditProfile() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
 
+  // Trade request state
+  const [activeTradeRequest, setActiveTradeRequest] = useState(null);
+  const [trFormOpen, setTrFormOpen] = useState(false);
+  const [trOffering, setTrOffering] = useState(null);
+  const [trOfferingQty, setTrOfferingQty] = useState("1");
+  const [trOfferingUnit, setTrOfferingUnit] = useState("session");
+  const [trWanting, setTrWanting] = useState(null);
+  const [trWantingQty, setTrWantingQty] = useState("1");
+  const [trWantingUnit, setTrWantingUnit] = useState("session");
+  const [trNote, setTrNote] = useState("");
+  const [trSaving, setTrSaving] = useState(false);
+  const [trError, setTrError] = useState("");
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
@@ -81,6 +94,24 @@ export default function EditProfile() {
         setOffering(p.offering ? offeringSkill : null);
         setSeeking(p.seeking ? p.seeking.split(",").map((s) => s.trim()).filter(Boolean) : []);
       }
+      // Fetch active trade request
+      const trRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=eq.${session.user.id}&status=eq.open&limit=1`,
+        { headers: await getAuthHeaders() }
+      );
+      const trRows = await trRes.json();
+      if (Array.isArray(trRows) && trRows[0]) {
+        const tr = trRows[0];
+        setActiveTradeRequest(tr);
+        setTrOffering({ icon: tr.offering_icon, label: tr.offering_skill });
+        setTrOfferingQty(String(tr.offering_qty));
+        setTrOfferingUnit(tr.offering_unit);
+        setTrWanting({ icon: tr.wanting_icon, label: tr.wanting_skill });
+        setTrWantingQty(String(tr.wanting_qty));
+        setTrWantingUnit(tr.wanting_unit);
+        setTrNote(tr.note || "");
+      }
+
       setLoading(false);
     });
   }, []);
@@ -96,6 +127,61 @@ export default function EditProfile() {
     setSeeking((prev) =>
       prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
     );
+  };
+
+  const handleTradeRequestSave = async () => {
+    if (!trOffering) { setTrError("Please select the skill you're offering."); return; }
+    if (!trWanting) { setTrError("Please select the skill you want."); return; }
+    setTrError("");
+    setTrSaving(true);
+    const headers = await getAuthHeaders();
+    const body = {
+      user_id: currentUser.id,
+      offering_skill: trOffering.label,
+      offering_icon: trOffering.icon,
+      offering_qty: parseInt(trOfferingQty, 10) || 1,
+      offering_unit: trOfferingUnit,
+      wanting_skill: trWanting.label,
+      wanting_icon: trWanting.icon,
+      wanting_qty: parseInt(trWantingQty, 10) || 1,
+      wanting_unit: trWantingUnit,
+      note: trNote.trim() || null,
+      status: "open",
+    };
+    if (activeTradeRequest) {
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?id=eq.${activeTradeRequest.id}`,
+        { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(body) }
+      );
+      setActiveTradeRequest({ ...activeTradeRequest, ...body });
+    } else {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests`,
+        { method: "POST", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(body) }
+      );
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows[0]) setActiveTradeRequest(rows[0]);
+    }
+    setTrFormOpen(false);
+    setTrSaving(false);
+  };
+
+  const handleTradeRequestRemove = async () => {
+    if (!activeTradeRequest) return;
+    const headers = await getAuthHeaders();
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?id=eq.${activeTradeRequest.id}`,
+      { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "closed" }) }
+    );
+    setActiveTradeRequest(null);
+    setTrOffering(null);
+    setTrOfferingQty("1");
+    setTrOfferingUnit("session");
+    setTrWanting(null);
+    setTrWantingQty("1");
+    setTrWantingUnit("session");
+    setTrNote("");
+    setTrFormOpen(false);
   };
 
   const handleSave = async () => {
@@ -403,6 +489,200 @@ export default function EditProfile() {
           {seeking.length > 0 && (
             <div style={{ fontSize: 12, color: C.clay, marginTop: 12 }}>
               {seeking.length} selected: {seeking.join(", ")}
+            </div>
+          )}
+        </div>
+
+        {/* Trade Request */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
+            Trade Request
+          </div>
+          <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>
+            Post one active offer — e.g. "1 haircut for 2 piano lessons."
+          </div>
+
+          {activeTradeRequest && !trFormOpen ? (
+            // Preview card
+            <div style={{
+              background: "#FDF6EE", border: `1.5px solid ${C.clay}`,
+              borderRadius: 14, padding: "16px 18px", marginBottom: 12,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5, fontWeight: 600, marginBottom: 10, textTransform: "uppercase" }}>
+                    Open Trade Request
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 22 }}>{activeTradeRequest.offering_icon}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: C.bark }}>{activeTradeRequest.offering_skill}</div>
+                      <div style={{ fontSize: 11, color: C.barkLight }}>{activeTradeRequest.offering_qty} {activeTradeRequest.offering_unit}</div>
+                    </div>
+                    <div style={{ fontSize: 18, color: C.clay, fontWeight: 600, padding: "0 4px" }}>⇄</div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 22 }}>{activeTradeRequest.wanting_icon}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: C.bark }}>{activeTradeRequest.wanting_skill}</div>
+                      <div style={{ fontSize: 11, color: C.barkLight }}>{activeTradeRequest.wanting_qty} {activeTradeRequest.wanting_unit}</div>
+                    </div>
+                  </div>
+                  {activeTradeRequest.note && (
+                    <div style={{ fontSize: 12, color: C.barkLight, fontStyle: "italic", marginTop: 10 }}>
+                      {activeTradeRequest.note}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                <button
+                  onClick={() => { setTrFormOpen(true); }}
+                  style={{
+                    flex: 1, padding: "9px", minHeight: 40, borderRadius: 100,
+                    background: C.sand, border: `1px solid ${C.sandDark}`,
+                    color: C.barkLight, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >Edit</button>
+                <button
+                  onClick={handleTradeRequestRemove}
+                  style={{
+                    flex: 1, padding: "9px", minHeight: 40, borderRadius: 100,
+                    background: "rgba(212,113,74,0.07)", border: `1px solid rgba(212,113,74,0.25)`,
+                    color: C.terracotta, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >Remove</button>
+              </div>
+            </div>
+          ) : !trFormOpen ? (
+            // Create button
+            <button
+              onClick={() => setTrFormOpen(true)}
+              style={{
+                width: "100%", padding: "13px", minHeight: 44,
+                background: "rgba(192,122,82,0.07)", border: `1.5px dashed ${C.clay}`,
+                borderRadius: 14, color: C.clay, fontSize: 13, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              }}
+            >+ Create trade request</button>
+          ) : null}
+
+          {trFormOpen && (
+            <div style={{
+              background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
+              borderRadius: 14, padding: "18px",
+            }}>
+              {/* Offering skill */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>You offer</label>
+                <SkillPicker mode="single" skills={SKILLS} value={trOffering} onChange={setTrOffering} />
+              </div>
+
+              {/* Offering qty + unit */}
+              <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-end" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>How many?</label>
+                  <input
+                    type="number" min={1} max={10}
+                    value={trOfferingQty}
+                    onChange={(e) => setTrOfferingQty(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 6, paddingBottom: 2 }}>
+                  {["session", "hour"].map((u) => (
+                    <button key={u} type="button"
+                      onClick={() => setTrOfferingUnit(u)}
+                      style={{
+                        padding: "10px 14px", minHeight: 44, borderRadius: 100,
+                        border: trOfferingUnit === u ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                        background: trOfferingUnit === u ? "rgba(212,113,74,0.1)" : C.sand,
+                        color: trOfferingUnit === u ? C.terracotta : C.barkLight,
+                        fontSize: 13, fontWeight: trOfferingUnit === u ? 600 : 400,
+                        cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >{u}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Wanting skill */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>In exchange for</label>
+                <SkillPicker mode="single" skills={SKILLS} value={trWanting} onChange={setTrWanting} exclude={trOffering?.label} />
+              </div>
+
+              {/* Wanting qty + unit */}
+              <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-end" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>How many?</label>
+                  <input
+                    type="number" min={1} max={10}
+                    value={trWantingQty}
+                    onChange={(e) => setTrWantingQty(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 6, paddingBottom: 2 }}>
+                  {["session", "hour"].map((u) => (
+                    <button key={u} type="button"
+                      onClick={() => setTrWantingUnit(u)}
+                      style={{
+                        padding: "10px 14px", minHeight: 44, borderRadius: 100,
+                        border: trWantingUnit === u ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                        background: trWantingUnit === u ? "rgba(212,113,74,0.1)" : C.sand,
+                        color: trWantingUnit === u ? C.terracotta : C.barkLight,
+                        fontSize: 13, fontWeight: trWantingUnit === u ? 600 : 400,
+                        cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >{u}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Note */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Note <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <input
+                  type="text"
+                  value={trNote}
+                  onChange={(e) => setTrNote(e.target.value)}
+                  placeholder="Any location or preference notes? (optional)"
+                  style={inputStyle}
+                />
+              </div>
+
+              {trError && (
+                <div style={{
+                  background: "rgba(212,113,74,0.08)", border: `1px solid rgba(212,113,74,0.25)`,
+                  borderRadius: 10, padding: "10px 14px", marginBottom: 12,
+                  fontSize: 13, color: C.terracotta,
+                }}>{trError}</div>
+              )}
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => { setTrFormOpen(false); setTrError(""); }}
+                  style={{
+                    flex: 1, padding: "12px", minHeight: 44, borderRadius: 100,
+                    background: "transparent", border: `1px solid ${C.sandDark}`,
+                    color: C.barkLight, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >Cancel</button>
+                <button
+                  onClick={handleTradeRequestSave}
+                  disabled={trSaving}
+                  style={{
+                    flex: 2, padding: "12px", minHeight: 44, borderRadius: 100,
+                    background: C.terracotta, border: "none",
+                    color: C.cream, fontSize: 13, fontWeight: 500,
+                    cursor: trSaving ? "not-allowed" : "pointer",
+                    opacity: trSaving ? 0.7 : 1,
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >{trSaving ? "Saving..." : activeTradeRequest ? "Update request" : "Post request"}</button>
+              </div>
             </div>
           )}
         </div>
