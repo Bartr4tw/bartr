@@ -352,12 +352,12 @@ export default function EditProfile() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Your name</label>
+            <label style={labelStyle}>Your name <span style={{ color: C.terracotta }}>*</span></label>
             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} style={inputStyle} />
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Neighborhood</label>
+            <label style={labelStyle}>Neighborhood <span style={{ color: C.terracotta }}>*</span></label>
             <select value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
               style={{ ...selectStyle, color: neighborhood ? C.bark : C.barkLight }}>
               <option value="" disabled>Select your neighborhood</option>
@@ -372,7 +372,7 @@ export default function EditProfile() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Age <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <label style={labelStyle}>Age <span style={{ color: C.terracotta }}>*</span></label>
             <input
               type="number" min={13} max={120}
               value={age}
@@ -383,7 +383,7 @@ export default function EditProfile() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Gender <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <label style={labelStyle}>Gender <span style={{ color: C.terracotta }}>*</span></label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {["Man", "Woman", "Non-binary", "Prefer not to say"].map((opt) => {
                 const active = gender === opt;
@@ -469,7 +469,7 @@ export default function EditProfile() {
           </div>
 
           <div>
-            <label style={labelStyle}>How do you prefer to meet? <span style={{ color: C.sandDark }}>(optional)</span></label>
+            <label style={labelStyle}>How do you prefer to meet? <span style={{ color: C.terracotta }}>*</span></label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {["In person", "Virtual"].map((opt) => {
                 const active = swapPreference.includes(opt);
@@ -499,7 +499,7 @@ export default function EditProfile() {
         {/* Offering */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
-            What you offer
+            What you offer <span style={{ color: C.terracotta, fontFamily: "'DM Sans', sans-serif", fontSize: 16 }}>*</span>
           </div>
           <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>Pick one skill or hobby you'd love to share.</div>
           <SkillPicker mode="single" skills={SKILLS} value={offering} onChange={setOffering} />
@@ -508,7 +508,7 @@ export default function EditProfile() {
         {/* Seeking */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
-            What you want to learn
+            What you want to learn <span style={{ color: C.terracotta, fontFamily: "'DM Sans', sans-serif", fontSize: 16 }}>*</span>
           </div>
           <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>Select one or more skills you're curious about.</div>
           <SkillPicker mode="multi" skills={SKILLS} value={seeking} onChange={toggleSeeking} exclude={offering?.label} />
