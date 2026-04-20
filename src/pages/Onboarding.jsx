@@ -17,6 +17,7 @@ export default function Onboarding({ user, onComplete }) {
   const [neighborhood, setNeighborhood] = useState("");
   const [bio, setBio] = useState("");
   const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
   const [offering, setOffering] = useState(null);
   const [seeking, setSeeking] = useState([]);
   const [availability, setAvailability] = useState([]);
@@ -52,6 +53,7 @@ export default function Onboarding({ user, onComplete }) {
         location: neighborhood,
         bio,
         age: age !== "" ? parseInt(age, 10) : null,
+        gender: gender || null,
         offering: offering.label,
         offering_icon: offering.icon,
         seeking: seeking.join(","),
@@ -172,6 +174,29 @@ export default function Onboarding({ user, onComplete }) {
                 <label style={labelStyle}>Age <span style={{ color: C.sandDark }}>(optional)</span></label>
                 <input type="number" min={13} max={120} placeholder="e.g. 28"
                   value={age} onChange={e => setAge(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Gender <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Man", "Woman", "Non-binary", "Prefer not to say"].map((opt) => {
+                    const active = gender === opt;
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => setGender(active ? "" : opt)}
+                        style={{
+                          padding: "9px 16px", minHeight: 44, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1.5px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.bark,
+                          fontSize: 13, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div style={{ marginBottom: 24 }}>
