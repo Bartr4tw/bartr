@@ -305,7 +305,7 @@ export default function ProfileView() {
                 <button
                   onClick={() => {
                     const msg = encodeURIComponent(
-                      `Hey! I saw your trade request — I can help with ${tradeRequest.wanting_skill}. Would you be open to swapping for ${tradeRequest.offering_skill}?`
+                      `Hey! I saw your trade request - I can help with ${tradeRequest.wanting_skill}. Would you be open to swapping for ${tradeRequest.offering_skill}?`
                     );
                     navigate(`/chat/${userId}?prefillMessage=${msg}`);
                   }}

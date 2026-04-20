@@ -359,7 +359,7 @@ export default function EditProfile() {
               style={{ ...selectStyle, color: neighborhood ? C.bark : C.barkLight }}>
               <option value="" disabled>Select your neighborhood</option>
               {Object.entries(NEIGHBORHOODS).map(([borough, hoods]) => (
-                <optgroup key={borough} label={`— ${borough} —`}>
+                <optgroup key={borough} label={borough}>
                   {hoods.map((hood) => (
                     <option key={hood} value={hood}>{hood}</option>
                   ))}
@@ -499,7 +499,7 @@ export default function EditProfile() {
             Trade Request
           </div>
           <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>
-            Post one active offer — e.g. "1 haircut for 2 piano lessons."
+            Post one active offer, e.g. "1 haircut for 2 piano lessons."
           </div>
 
           {activeTradeRequest && !trFormOpen ? (

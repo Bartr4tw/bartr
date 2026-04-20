@@ -159,7 +159,7 @@ export default function Onboarding({ user, onComplete }) {
                 }}>
                   <option value="" disabled>Select your neighborhood</option>
                   {Object.entries(NEIGHBORHOODS).map(([borough, hoods]) => (
-                    <optgroup key={borough} label={`— ${borough} —`}>
+                    <optgroup key={borough} label={borough}>
                       {hoods.map(hood => (
                         <option key={hood} value={hood}>{hood}</option>
                       ))}

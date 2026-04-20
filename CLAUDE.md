@@ -277,6 +277,7 @@ const C = {
 - **Never use the new publishable key format** — causes silent timeouts on DB operations. Use the legacy anon key from the Supabase dashboard.
 - **Never introduce CSS modules, Tailwind, or external stylesheets** — all styling is inline. `index.css` is intentionally empty.
 - **Never add a test suite** — none is configured and none is expected.
+- **Never use em dashes (`—`) in UI text strings** — use a regular hyphen-minus with spaces (` - `) or restructure the sentence. Em dashes are fine in code comments.
 
 ## Security Notes (pre-scale)
 

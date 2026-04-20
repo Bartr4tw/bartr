@@ -726,7 +726,7 @@ export default function BartrApp({ profile, session }) {
                         isMobile={isMobile}
                         onTradeRespond={(tr) => {
                           const msg = encodeURIComponent(
-                            `Hey! I saw your trade request — I can help with ${tr.wanting_skill}. Would you be open to swapping for ${tr.offering_skill}?`
+                            `Hey! I saw your trade request - I can help with ${tr.wanting_skill}. Would you be open to swapping for ${tr.offering_skill}?`
                           );
                           navigate(`/chat/${profiles[0].id}?prefillMessage=${msg}`);
                         }}
