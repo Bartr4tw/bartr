@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthHeaders } from "../lib/supabase.js";
-import { SKILLS, CATEGORIES } from "../lib/skillsData.js";
+import { SKILLS, CATEGORIES, getBorough } from "../lib/skillsData.js";
 
 const C = {
   cream: "#FAF6EE", warmWhite: "#FDFAF4",
@@ -80,7 +80,8 @@ function applyFiltersToProfiles(pool, f) {
       if (p.age != null && (p.age < f.age_min || p.age > f.age_max)) return false;
     }
     if (f.boroughs.length > 0) {
-      if (!p.location || !f.boroughs.some((b) => p.location.includes(b))) return false;
+      const profileBorough = getBorough(p.location);
+      if (!profileBorough || !f.boroughs.includes(profileBorough)) return false;
     }
     if (f.swap_preference.length > 0) {
       if (!Array.isArray(p.swapPreference) || !p.swapPreference.some((sp) => f.swap_preference.includes(sp))) return false;

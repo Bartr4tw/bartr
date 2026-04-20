@@ -65,3 +65,11 @@ export const SKILLS = [
   { icon: "🇰🇷", label: "Korean",         category: "Languages" },
   { icon: "🇮🇳", label: "Hindi",          category: "Languages" },
 ];
+
+export function getBorough(neighborhood) {
+  for (const [borough, neighborhoods] of Object.entries(NEIGHBORHOODS)) {
+    if (neighborhoods.includes(neighborhood)) return borough;
+  }
+  return null;
+}
+
