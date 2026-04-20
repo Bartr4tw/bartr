@@ -170,13 +170,6 @@ export default function ProfileView() {
             }}>
               {profile.full_name}{profile.age ? `, ${profile.age}` : ""}
             </span>
-            {/* Verified badge */}
-            <div style={{
-              width: 20, height: 20, borderRadius: "50%",
-              background: C.terracotta,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 10, color: "#fff", fontWeight: 700, flexShrink: 0,
-            }}>✓</div>
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)" }}>
             {profile.location}
