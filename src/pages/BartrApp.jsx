@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthHeaders } from "../lib/supabase.js";
-import { SKILLS } from "../lib/skillsData.js";
+import { SKILLS, CATEGORIES } from "../lib/skillsData.js";
 
 const C = {
   cream: "#FAF6EE", warmWhite: "#FDFAF4",
@@ -34,6 +34,7 @@ function transformProfile(row) {
     availability: Array.isArray(row.availability) ? row.availability : [],
     swapPreference: Array.isArray(row.swap_preference) ? row.swap_preference : [],
     swapsCompleted: row.swaps_completed || 0,
+    gender: row.gender || null,
     tradeRequest: null,
   };
 }
@@ -51,6 +52,43 @@ async function enrichWithTradeRequests(profiles) {
   const byUserId = {};
   rows.forEach((r) => { byUserId[r.user_id] = r; });
   return profiles.map((p) => ({ ...p, tradeRequest: byUserId[p.id] || null }));
+}
+
+const DEFAULT_FILTERS = {
+  gender_preference: [], age_min: 18, age_max: 60,
+  boroughs: [], swap_preference: [], skill_categories: [],
+};
+
+function isFiltersActive(f) {
+  return (
+    f.gender_preference.length > 0 ||
+    f.age_min > 18 || f.age_max < 60 ||
+    f.boroughs.length > 0 ||
+    f.swap_preference.length > 0 ||
+    f.skill_categories.length > 0
+  );
+}
+
+function applyFiltersToProfiles(pool, f) {
+  return pool.filter((p) => {
+    if (f.gender_preference.length > 0) {
+      if (!p.gender || !f.gender_preference.includes(p.gender)) return false;
+    }
+    if (f.age_min > 18 || f.age_max < 60) {
+      if (p.age != null && (p.age < f.age_min || p.age > f.age_max)) return false;
+    }
+    if (f.boroughs.length > 0) {
+      if (!p.location || !f.boroughs.some((b) => p.location.includes(b))) return false;
+    }
+    if (f.swap_preference.length > 0) {
+      if (!Array.isArray(p.swapPreference) || !p.swapPreference.some((sp) => f.swap_preference.includes(sp))) return false;
+    }
+    if (f.skill_categories.length > 0) {
+      const skill = SKILLS.find((s) => s.label === p.offering);
+      if (!skill || !f.skill_categories.includes(skill.category)) return false;
+    }
+    return true;
+  });
 }
 
 function Avatar({ url, initials, size, fontSize, border }) {
@@ -465,6 +503,24 @@ export default function BartrApp({ profile, session }) {
   const [lastAction, setLastAction] = useState(null);
   const [secondChance, setSecondChance] = useState(false);
   const [secondChanceLoading, setSecondChanceLoading] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [filters, setFilters] = useState(() => {
+    const pf = profile?.filters;
+    if (pf && typeof pf === "object") {
+      return {
+        gender_preference: Array.isArray(pf.gender_preference) ? pf.gender_preference : [],
+        age_min: typeof pf.age_min === "number" ? pf.age_min : 18,
+        age_max: typeof pf.age_max === "number" ? Math.min(pf.age_max, 60) : 60,
+        boroughs: Array.isArray(pf.boroughs) ? pf.boroughs : [],
+        swap_preference: Array.isArray(pf.swap_preference) ? pf.swap_preference : [],
+        skill_categories: Array.isArray(pf.skill_categories) ? pf.skill_categories : [],
+      };
+    }
+    return { ...DEFAULT_FILTERS };
+  });
+  const [pendingFilters, setPendingFilters] = useState({ ...DEFAULT_FILTERS });
+  const allProfilesRef = useRef([]);
+  const sessionSwipedIds = useRef(new Set());
 
   // Fetch profiles excluding anyone already swiped on or matched with
   useEffect(() => {
@@ -489,7 +545,8 @@ export default function BartrApp({ profile, session }) {
         const rows = await fetch(url, { headers: authHeaders }).then((r) => r.json());
         const transformed = (Array.isArray(rows) ? rows : []).map(transformProfile);
         const enriched = await enrichWithTradeRequests(transformed);
-        setProfiles(enriched);
+        allProfilesRef.current = enriched;
+        setProfiles(applyFiltersToProfiles(enriched, filters));
         setProfilesLoading(false);
       })
       .catch(() => setProfilesLoading(false));
@@ -563,7 +620,8 @@ export default function BartrApp({ profile, session }) {
 
     const transformed = (Array.isArray(rows) ? rows : []).map(transformProfile);
     const enriched = await enrichWithTradeRequests(transformed);
-    setProfiles(enriched);
+    allProfilesRef.current = enriched;
+    setProfiles(applyFiltersToProfiles(enriched, filters));
     setSecondChance(true);
     setSecondChanceLoading(false);
   };
@@ -573,6 +631,7 @@ export default function BartrApp({ profile, session }) {
     if (!current) return;
 
     // Update UI immediately
+    sessionSwipedIds.current.add(current.id);
     setLastAction(direction);
     setProfiles((p) => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
@@ -622,6 +681,36 @@ export default function BartrApp({ profile, session }) {
     }
   };
 
+  const handleApplyFilters = async () => {
+    setFilters(pendingFilters);
+    setFilterSheetOpen(false);
+    const pool = allProfilesRef.current.filter((p) => !sessionSwipedIds.current.has(p.id));
+    setProfiles(applyFiltersToProfiles(pool, pendingFilters));
+    const headers = await getAuthHeaders();
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${profile.id}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ filters: pendingFilters }),
+    });
+  };
+
+  const removeFilterTag = async (type, value) => {
+    const newFilters = type === "age_range"
+      ? { ...filters, age_min: 18, age_max: 60 }
+      : { ...filters, [type]: filters[type].filter((v) => v !== value) };
+    setFilters(newFilters);
+    const pool = allProfilesRef.current.filter((p) => !sessionSwipedIds.current.has(p.id));
+    setProfiles(applyFiltersToProfiles(pool, newFilters));
+    const headers = await getAuthHeaders();
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${profile.id}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ filters: newFilters }),
+    });
+  };
+
+  const filtersActive = isFiltersActive(filters);
+
   return (
     <div style={{
       height: "100vh", overflow: "hidden",
@@ -635,6 +724,9 @@ export default function BartrApp({ profile, session }) {
         * { box-sizing: border-box; }
         @keyframes matchPop { from { opacity:0; transform:translate(-50%,-50%) scale(0.8); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+        .age-slider { -webkit-appearance:none; appearance:none; position:absolute; left:0; top:-7px; width:100%; height:20px; background:transparent; pointer-events:none; outline:none; }
+        .age-slider::-webkit-slider-thumb { -webkit-appearance:none; pointer-events:all; width:20px; height:20px; border-radius:50%; background:#D4714A; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(74,55,40,0.2); }
+        .age-slider::-moz-range-thumb { pointer-events:all; width:20px; height:20px; border-radius:50%; background:#D4714A; cursor:pointer; border:2px solid #fff; }
       `}</style>
 
       {/* Header */}
@@ -675,17 +767,41 @@ export default function BartrApp({ profile, session }) {
             </div>
           )}
         </div>
-        <button onClick={() => navigate(`/profile/${profile.id}`)} style={{
-          display: "flex", alignItems: "center", gap: 8,
-          background: C.sand,
-          border: `1px solid ${C.sandDark}`,
-          borderRadius: 100, padding: "6px 14px",
-          color: C.barkLight,
-          fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s",
-          minHeight: 44,
-        }}>
-          ◉ Profile
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {activeTab === 0 && (
+            <button
+              onClick={() => {
+                setPendingFilters({ ...DEFAULT_FILTERS, ...filters, age_max: Math.min(filters.age_max, 60) });
+                setFilterSheetOpen(true);
+              }}
+              style={{
+                position: "relative",
+                padding: "6px 14px", minHeight: 36, borderRadius: 100,
+                background: filtersActive ? "#FDF0EA" : C.sand,
+                border: `1.5px solid ${filtersActive ? C.terracotta : C.sandDark}`,
+                color: filtersActive ? C.clayDeep : C.barkLight,
+                fontSize: 13, fontWeight: 500, cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s",
+              }}
+            >
+              Filters
+              {filtersActive && (
+                <div style={{
+                  position: "absolute", top: -3, right: -3,
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: C.terracotta, border: `2px solid ${C.warmWhite}`,
+                }} />
+              )}
+            </button>
+          )}
+          <button onClick={() => navigate(`/profile/${profile.id}`)} style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: C.sand, border: `1px solid ${C.sandDark}`,
+            borderRadius: 100, padding: "6px 14px", color: C.barkLight,
+            fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s",
+            minHeight: 44,
+          }}>◉ Profile</button>
+        </div>
       </div>
 
       {/* Body */}
@@ -693,7 +809,47 @@ export default function BartrApp({ profile, session }) {
 
         {/* DISCOVER */}
         {activeTab === 0 && (
-          <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+            {/* Active filter tags row */}
+            {filtersActive && (
+              <div style={{
+                flexShrink: 0, display: "flex", gap: 6, alignItems: "center",
+                overflowX: "auto", padding: "8px 16px",
+                borderBottom: `1px solid ${C.sandDark}`,
+                background: C.warmWhite, scrollbarWidth: "none",
+              }}>
+                {[
+                  ...filters.gender_preference.map((g) => ({ label: g, type: "gender_preference", value: g })),
+                  ...(filters.age_min > 18 || filters.age_max < 60
+                    ? [{ label: `Ages ${filters.age_min}-${filters.age_max}`, type: "age_range", value: null }]
+                    : []),
+                  ...filters.boroughs.map((b) => ({ label: b, type: "boroughs", value: b })),
+                  ...filters.swap_preference.map((s) => ({ label: s, type: "swap_preference", value: s })),
+                  ...filters.skill_categories.map((c) => ({ label: c, type: "skill_categories", value: c })),
+                ].map((tag, i) => (
+                  <div key={i} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0,
+                    background: "#FDF0EA", border: `1px solid ${C.terracotta}`,
+                    borderRadius: 100, padding: "3px 7px",
+                    fontSize: 9, color: C.clayDeep, fontWeight: 500,
+                  }}>
+                    {tag.label}
+                    <button
+                      onClick={() => removeFilterTag(tag.type, tag.value)}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: C.clayDeep, fontSize: 9, padding: 0, lineHeight: 1,
+                        display: "flex", alignItems: "center",
+                      }}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Main content row */}
+            <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
             {/* Main card area */}
             <div style={{
               flex: 1, display: "flex", flexDirection: "column",
@@ -885,6 +1041,7 @@ export default function BartrApp({ profile, session }) {
                 )}
               </div>
             )}
+            </div>
           </div>
         )}
 
@@ -939,6 +1096,241 @@ export default function BartrApp({ profile, session }) {
             </button>
           ))}
         </div>
+      )}
+
+      {/* Filter sheet */}
+      {filterSheetOpen && (
+        <>
+          <div onClick={() => setFilterSheetOpen(false)} style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(74,55,40,0.4)",
+          }} />
+          <div style={{
+            position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 51,
+            background: C.warmWhite, borderRadius: "16px 16px 0 0",
+            maxHeight: "85vh", overflowY: "auto",
+            boxShadow: "0 -4px 32px rgba(74,55,40,0.16)",
+          }}>
+            {/* Drag handle */}
+            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: C.sandDark }} />
+            </div>
+            {/* Sheet header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 20px 12px", borderBottom: `1px solid ${C.sandDark}`,
+            }}>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark }}>
+                Filter people
+              </div>
+              <button
+                onClick={() => setPendingFilters({ ...DEFAULT_FILTERS })}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: C.terracotta, fontSize: 14, fontWeight: 500,
+                  fontFamily: "'DM Sans', sans-serif", padding: "4px 0", minHeight: 36,
+                }}
+              >Clear all</button>
+            </div>
+
+            <div style={{ padding: "0 20px 32px" }}>
+
+              {/* Gender */}
+              <div style={{ paddingTop: 20, marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginBottom: 4 }}>Gender</div>
+                <div style={{ fontSize: 11, color: C.barkLight, fontStyle: "italic", marginBottom: 10 }}>Select one or more</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Any", "Man", "Woman", "Non-binary", "Prefer not to say"].map((opt) => {
+                    const isAny = opt === "Any";
+                    const active = isAny
+                      ? pendingFilters.gender_preference.length === 0
+                      : pendingFilters.gender_preference.includes(opt);
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => {
+                          if (isAny) {
+                            setPendingFilters((f) => ({ ...f, gender_preference: [] }));
+                          } else {
+                            setPendingFilters((f) => {
+                              const cur = f.gender_preference;
+                              const next = cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt];
+                              return { ...f, gender_preference: next };
+                            });
+                          }
+                        }}
+                        style={{
+                          padding: "8px 14px", minHeight: 36, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.barkLight,
+                          fontSize: 13, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: C.sandDark, marginBottom: 20 }} />
+
+              {/* Age range */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginBottom: 16 }}>Age range</div>
+                <div style={{ position: "relative", height: 6, borderRadius: 3, background: C.sandDark, margin: "0 8px 12px" }}>
+                  <div style={{
+                    position: "absolute", top: 0, bottom: 0, borderRadius: 3, background: C.terracotta,
+                    left: `${((pendingFilters.age_min - 18) / 42) * 100}%`,
+                    right: `${100 - ((pendingFilters.age_max - 18) / 42) * 100}%`,
+                  }} />
+                  <input type="range" min={18} max={60} value={pendingFilters.age_min}
+                    onChange={(e) => {
+                      const v = Math.min(parseInt(e.target.value), pendingFilters.age_max - 1);
+                      setPendingFilters((f) => ({ ...f, age_min: v }));
+                    }}
+                    className="age-slider"
+                  />
+                  <input type="range" min={18} max={60} value={pendingFilters.age_max}
+                    onChange={(e) => {
+                      const v = Math.max(parseInt(e.target.value), pendingFilters.age_min + 1);
+                      setPendingFilters((f) => ({ ...f, age_max: v }));
+                    }}
+                    className="age-slider"
+                  />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.barkLight }}>
+                  <span>{pendingFilters.age_min}</span>
+                  <span>{pendingFilters.age_max}{pendingFilters.age_max === 60 ? "+" : ""}</span>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: C.sandDark, marginBottom: 20 }} />
+
+              {/* Borough */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginBottom: 12 }}>Borough</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Any", "Manhattan", "Brooklyn", "Queens", "Bronx"].map((opt) => {
+                    const isAny = opt === "Any";
+                    const active = isAny
+                      ? pendingFilters.boroughs.length === 0
+                      : pendingFilters.boroughs.includes(opt);
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => {
+                          if (isAny) {
+                            setPendingFilters((f) => ({ ...f, boroughs: [] }));
+                          } else {
+                            setPendingFilters((f) => {
+                              const cur = f.boroughs;
+                              const next = cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt];
+                              return { ...f, boroughs: next };
+                            });
+                          }
+                        }}
+                        style={{
+                          padding: "8px 14px", minHeight: 36, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.barkLight,
+                          fontSize: 13, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: C.sandDark, marginBottom: 20 }} />
+
+              {/* Swap preference */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginBottom: 12 }}>Swap preference</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Any", "In person", "Virtual"].map((opt) => {
+                    const isAny = opt === "Any";
+                    const active = isAny
+                      ? pendingFilters.swap_preference.length === 0
+                      : pendingFilters.swap_preference.includes(opt);
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => {
+                          if (isAny) {
+                            setPendingFilters((f) => ({ ...f, swap_preference: [] }));
+                          } else {
+                            setPendingFilters((f) => {
+                              const cur = f.swap_preference;
+                              const next = cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt];
+                              return { ...f, swap_preference: next };
+                            });
+                          }
+                        }}
+                        style={{
+                          padding: "8px 14px", minHeight: 36, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.barkLight,
+                          fontSize: 13, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: C.sandDark, marginBottom: 20 }} />
+
+              {/* Skill category */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.bark, marginBottom: 12 }}>Skill category</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Any", ...CATEGORIES.filter((c) => c !== "All")].map((opt) => {
+                    const isAny = opt === "Any";
+                    const active = isAny
+                      ? pendingFilters.skill_categories.length === 0
+                      : pendingFilters.skill_categories.includes(opt);
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => {
+                          if (isAny) {
+                            setPendingFilters((f) => ({ ...f, skill_categories: [] }));
+                          } else {
+                            setPendingFilters((f) => {
+                              const cur = f.skill_categories;
+                              const next = cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt];
+                              return { ...f, skill_categories: next };
+                            });
+                          }
+                        }}
+                        style={{
+                          padding: "8px 14px", minHeight: 36, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.barkLight,
+                          fontSize: 13, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Apply */}
+              <button
+                onClick={handleApplyFilters}
+                style={{
+                  width: "100%", padding: "14px", minHeight: 50, borderRadius: 100,
+                  background: C.terracotta, border: "none",
+                  color: C.cream, fontSize: 15, fontWeight: 600,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Apply filters</button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Match overlay */}
