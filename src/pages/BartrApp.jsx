@@ -202,15 +202,6 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
               }}>
                 {profile.name}{profile.age ? `, ${profile.age}` : ""}
               </span>
-              {/* Verified badge */}
-              <div style={{
-                width: 18, height: 18, borderRadius: "50%",
-                background: C.terracotta,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 10, color: "#fff", fontWeight: 700, lineHeight: 1 }}>✓</span>
-              </div>
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.82)" }}>📍 {profile.location}</div>
           </div>
