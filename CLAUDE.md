@@ -55,13 +55,14 @@ src/
     Auth.jsx            # Login / signup / forgot password
     Onboarding.jsx      # 3-step new user setup
     Chat.jsx            # Real-time 1:1 messaging between matched users
-    EditProfile.jsx     # Edit profile page (name, neighborhood, bio, skills, photo)
+    EditProfile.jsx     # Edit profile page (name, neighborhood, bio, skills, photo, trade request)
+    ProfileView.jsx     # Full profile page for any user (/profile/:userId)
     ResetPassword.jsx   # Password reset landing page (handles Supabase recovery token)
   assets/               # Images
   main.jsx              # Routing + auth state management
   index.css             # Intentionally empty (cleared to fix style conflicts)
 public/
-  favicon.svg
+  favicon.svg           # Dark bark "b." rounded square icon
   icons.svg
 vercel.json             # Rewrites all routes to /index.html for React Router SPA
 .env.example            # Documents required env vars (no values)
@@ -79,6 +80,7 @@ vercel.json             # Rewrites all routes to /index.html for React Router SP
   3. Session, no profile row → `Onboarding`
   4. Session + profile → `BartrApp` (receives `profile` and `session` props)
 - `/chat/:userId` → `Chat` (self-contained auth check)
+- `/profile/:userId` → `ProfileView` (self-contained auth check) — must be before `/profile/edit` in route order
 - `/profile/edit` → `EditProfile` (self-contained auth check)
 - `/reset-password` → `ResetPassword` (handles Supabase recovery token from email link)
 
@@ -94,6 +96,7 @@ vercel.json             # Rewrites all routes to /index.html for React Router SP
 - `matches`: SELECT/INSERT where `user_a = auth.uid()` OR `user_b = auth.uid()`
 - `messages`: SELECT where sender or receiver = `auth.uid()`; INSERT where `sender_id = auth.uid()`
 - `custom_skills`: public SELECT (anon OK); authenticated INSERT
+- `trade_requests`: authenticated SELECT all; INSERT/UPDATE where `user_id = auth.uid()`
 - `invite_codes`: public SELECT (needed for pre-auth checks, though invite codes are no longer required at signup)
 
 Foreign key constraint on `profiles.id` was dropped to allow test inserts with fake UUIDs.
@@ -112,6 +115,11 @@ Foreign key constraint on `profiles.id` was dropped to allow test inserts with f
 | `seeking` | text | Comma-separated skill labels |
 | `bio` | text | |
 | `avatar_url` | text | Supabase Storage public URL |
+| `age` | int | Optional |
+| `instagram_handle` | text | Optional, stored with or without leading @ |
+| `linkedin_url` | text | Optional URL or path |
+| `availability` | text[] | e.g. ["Mornings", "Weekends"] |
+| `swap_preference` | text[] | e.g. ["In person", "Virtual"] |
 
 **Table: `swipes`**
 
@@ -134,7 +142,7 @@ Unique constraint on `(swiper_id, swiped_id)`. When a user gets a second chance 
 | `user_b` | uuid | Greater UUID of the pair |
 | `created_at` | timestamptz | |
 
-Unique constraint on `(user_a, user_b)`. Created when mutual right swipes are detected.
+Unique constraint on `(user_a, user_b)`. Created when mutual right swipes are detected, OR when a user sends the first message in a chat (using `resolution=ignore-duplicates` so it's idempotent).
 
 **Table: `messages`**
 
@@ -156,6 +164,26 @@ Supabase Realtime is enabled on messages: `alter publication supabase_realtime a
 | `label` | text | Skill name — unique index on `lower(label)` to prevent case-insensitive duplicates |
 | `icon` | text | Always `✨` for custom skills |
 | `created_at` | timestamptz | |
+
+**Table: `trade_requests`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `user_id` | uuid | Profile owner |
+| `offering_skill` | text | What the user is offering in this trade |
+| `offering_icon` | text | Emoji |
+| `offering_qty` | int | Quantity (e.g. 3) |
+| `offering_unit` | text | Unit (e.g. "sessions", "hours") |
+| `wanting_skill` | text | What the user wants in return |
+| `wanting_icon` | text | Emoji |
+| `wanting_qty` | int | Quantity |
+| `wanting_unit` | text | Unit |
+| `note` | text | Optional note |
+| `status` | text | `'open'` or `'closed'` |
+| `created_at` | timestamptz | |
+
+Only one active (`status=open`) trade request per user is shown. Users can create, edit, or remove their trade request from EditProfile.
 
 **Table: `invite_codes`**
 
@@ -190,18 +218,31 @@ Invite codes are no longer required at signup. The table remains in the DB but i
 - **`keepalive: true` on swipe inserts** — ensures the swipe POST completes even if the user navigates away before it resolves.
 - **Storage session token** — use `supabase.auth.getSession()` to get a fresh `access_token` immediately before any storage upload. Do not rely on the Supabase JS storage client to inject auth automatically.
 - **Second chance swipes use PATCH not POST** — swipes has a unique constraint on `(swiper_id, swiped_id)`. When re-queuing left-swiped profiles, update direction via `PATCH /rest/v1/swipes?swiper_id=eq.X&swiped_id=eq.Y`.
+- **Discover excludes matched users** — both the main Discover queue and the second-chance re-queue exclude all matched user IDs (fetched via two separate queries on `user_a` and `user_b`). If two users can't see each other, check for a stale match or swipe row.
 
 ## Key Components
 
 - **`Landing.jsx`** — Fully responsive marketing page. Uses `useWindowWidth` hook for responsive layouts. Nav collapses to logo + CTA on mobile. Hero stacks vertically on mobile (card stack hidden). Stats strip wraps. Scroll-triggered animations via `IntersectionObserver`. Marquee animation via `@keyframes marquee`. No waitlist form — single "Get started →" CTA throughout.
-- **`BartrApp.jsx`** — Three-tab app (Discover, Matches, Profile). Receives `profile` and `session` props from `main.jsx`. `session.access_token` used directly for all auth headers. Contains `transformProfile(row)`, `Avatar` component, `useWindowWidth` hook, and `SwipeCard`/`MatchCard` sub-components. Swipe threshold: 100px desktop, 80px mobile. Match detection uses two separate queries. **Second chance mode**: when Discover queue empties, "Give another look →" button re-queues left-swiped profiles; swiping right in this mode PATCHes the existing swipe record.
+- **`BartrApp.jsx`** — Three-tab app (Discover, Matches, Profile). Receives `profile` and `session` props from `main.jsx`. `session.access_token` used directly for all auth headers. Contains `transformProfile(row)`, `enrichWithTradeRequests(profiles)`, `Avatar` component, `useWindowWidth` hook, and `SwipeCard`/`MatchCard` sub-components. Swipe threshold: 100px desktop, 80px mobile. Match detection uses two separate queries. **Second chance mode**: when Discover queue empties, "Give another look →" button re-queues left-swiped profiles; swiping right in this mode PATCHes the existing swipe record. Profile tab click navigates to `/profile/:id` instead of rendering inline. Match signal highlights (banner + skill chips) use green (`#5a9e6f`), not terracotta.
 - **`Auth.jsx`** — Email + password auth. Three modes: `login`, `signup`, `forgot`. No invite code required. Successful login redirects to `/app` via `window.location.href`. Forgot password calls `supabase.auth.resetPasswordForEmail` with `redirectTo: /reset-password`.
 - **`ResetPassword.jsx`** — Listens for `PASSWORD_RECOVERY` event via `supabase.auth.onAuthStateChange`, shows new password form, calls `supabase.auth.updateUser({ password })`, redirects to `/app` on success.
-- **`Onboarding.jsx`** — 3-step wizard: (1) name + NYC neighborhood + optional bio, (2) pick one offering, (3) multi-select skills to learn. Uses `SkillPicker` component. Saves via direct REST API fetch with fresh session token. Outer container uses `alignItems: flex-start` so SkillPicker content scrolls on short mobile screens.
-- **`EditProfile.jsx`** — Standalone page with sticky header. Photo upload at top (circular avatar + 📷 button). Saves photo to Supabase Storage, then PATCHes profile row. Full page reload on save (`window.location.href = "/app"`) so `checkProfile` re-fetches updated data. Uses `SkillPicker` for both offering and seeking.
-- **`Chat.jsx`** — Full-screen messaging at `/chat/:userId`. Shows other user's avatar photo if available. Message fetch uses `sender_id=in.(X,Y)&receiver_id=in.(X,Y)`. Supabase Realtime subscription for live messages. Optimistic UI. Back button uses `navigate("/app")`.
+- **`Onboarding.jsx`** — 3-step wizard: (1) name + NYC neighborhood + optional age + optional bio, (2) pick one offering, (3) multi-select skills to learn + optional availability + optional swap preference. Uses `SkillPicker` component. Saves via direct REST API fetch with fresh session token. Outer container uses `alignItems: flex-start` so SkillPicker content scrolls on short mobile screens.
+- **`EditProfile.jsx`** — Standalone page with sticky header. Photo upload at top (circular avatar + 📷 button). Fields: name, neighborhood, bio, age, instagram, linkedin, availability, swap preference, offering, seeking. Also contains a Trade Request section: shows active request as a preview card (with Edit/Remove), a dashed "+" button to create one, or an inline form with two SkillPickers + qty/unit inputs + note field. Saves photo to Supabase Storage, then PATCHes profile row. Full page reload on save (`window.location.href = "/app"`).
+- **`ProfileView.jsx`** — Full profile page at `/profile/:userId`. Self-detects via `session.user.id === userId` (isSelf). Parallel-fetches profile + open trade request via `Promise.all`. Shows: hero photo/initials with gradient overlay, name + age, location + join date, Instagram/LinkedIn links, offering block, trade request card (with Respond button hidden for self), wants-to-learn grid, availability, swap preference. Sticky bottom CTA: self → Edit Profile + Sign Out; other → 📌 + Message button.
+- **`Chat.jsx`** — Full-screen messaging at `/chat/:userId`. Supports `?prefillMessage=` query param to pre-fill the input (used by trade request Respond flow). Shows other user's avatar photo if available. Message fetch uses `sender_id=in.(X,Y)&receiver_id=in.(X,Y)`. Supabase Realtime subscription for live messages. Optimistic UI. On first message send, creates a match record with `Prefer: resolution=ignore-duplicates` so it's idempotent. Back button uses `navigate("/app")`. Header tappable — navigates to `/profile/:userId`.
 - **`SkillPicker.jsx`** (`src/components/`) — Reusable skill selector with horizontally scrollable category tabs, search input, and custom skill support. Anon headers used for SELECT (public data); `getAuthHeaders()` used for INSERT. Module-level cache (`_cache`) prevents duplicate fetches. Handles 409 race condition by re-fetching and highlighting existing skill.
-- **`skillsData.js`** (`src/lib/`) — Exports `SKILLS` array (33 built-in skills with `{ icon, label, category }`), `CATEGORIES` array (`["All", "Sports & Fitness", "Music", "Tech", "Arts & Crafts", "Food", "Languages", "Other"]`), and `NEIGHBORHOODS` object (NYC boroughs → neighborhoods). Staten Island excluded intentionally.
+- **`skillsData.js`** (`src/lib/`) — Exports `SKILLS` array (34 built-in skills with `{ icon, label, category }`), `CATEGORIES` array (`["All", "Sports & Fitness", "Music", "Tech", "Arts & Crafts", "Food", "Languages", "Other"]`), and `NEIGHBORHOODS` object (NYC boroughs → neighborhoods). Staten Island excluded intentionally.
+
+## Trade Requests
+
+Users can post a single open trade request advertising a specific exchange (e.g. "3 guitar lessons for 2 hours of Spanish tutoring"). These appear:
+- As a card on the SwipeCard in Discover (between Offering and Availability sections)
+- On ProfileView between Offering and Wants to Learn
+- Managed via EditProfile (create / edit / remove)
+
+The `enrichWithTradeRequests(profiles)` function in `BartrApp.jsx` bulk-fetches open trade requests for all profiles in one request (`user_id=in.(ids)`) to avoid N+1 queries.
+
+Responding to a trade request navigates to `/chat/:userId?prefillMessage=...` with a pre-filled message. The Respond button on SwipeCard uses `stopPropagation` on `onMouseDown`/`onTouchStart` to prevent accidentally triggering the swipe drag.
 
 ## Design System
 
@@ -222,6 +263,8 @@ const C = {
 };
 ```
 
+**Additional color:** `#5a9e6f` — green used for match signal highlights (skill overlap banners, matched skill chips, trade request "Accepting responses" indicator). Not in the `C` object; used inline.
+
 - **Fonts:** `Fraunces` (serif display headings) + `DM Sans` (body) — loaded via Google Fonts `@import` inside each component's inline `<style>` block
 - **Buttons:** pill-shaped (`borderRadius: 100`), primary = terracotta, ghost = sand border
 - **All buttons/tap targets:** `minHeight: 44px` throughout for mobile usability
@@ -238,12 +281,13 @@ RLS is now enabled on all tables and storage. Remaining items before a larger pu
 
 1. **Custom domain** — set up `bartr.app` or `bartr.co` before sharing with real users
 2. **Neighborhood-weighted matching** — show nearby users first in Discover
-3. **Empty states** — what Discover looks like when second-chance queue is also empty; already handled, but could be more engaging
+3. **Notifications** — no push or in-app notification system yet; users don't know when they get a message
 4. **Waitlist / invite management** — no current mechanism to limit signups now that invite codes are removed
 
 ## Future Roadmap
 
 - Neighborhood-weighted matching (show nearby users first)
+- Push notifications for new messages / matches
 - React Native conversion for App Store
 - Video proof of skill on profiles
 - Safety features (reporting, session check-ins)
