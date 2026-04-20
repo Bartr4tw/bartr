@@ -115,6 +115,7 @@ Foreign key constraint on `profiles.id` was dropped to allow test inserts with f
 | `seeking` | text | Comma-separated skill labels |
 | `bio` | text | |
 | `avatar_url` | text | Supabase Storage public URL |
+| `swaps_completed` | int | Defaults to 0; shown as a badge on ProfileView and SwipeCard when > 0 |
 | `age` | int | Optional |
 | `instagram_handle` | text | Optional, stored with or without leading @ |
 | `linkedin_url` | text | Optional URL or path |
@@ -269,6 +270,13 @@ const C = {
 - **Buttons:** pill-shaped (`borderRadius: 100`), primary = terracotta, ghost = sand border
 - **All buttons/tap targets:** `minHeight: 44px` throughout for mobile usability
 - **Responsive:** all pages use `useWindowWidth()` hook or CSS `clamp()` for font scaling; mobile breakpoint at `768px`, tablet at `1024px`
+
+## Never Do This
+
+- **Never use `supabase.from(...).insert()`** — the JS client hangs silently on inserts. Always use direct `fetch` to the REST API.
+- **Never use the new publishable key format** — causes silent timeouts on DB operations. Use the legacy anon key from the Supabase dashboard.
+- **Never introduce CSS modules, Tailwind, or external stylesheets** — all styling is inline. `index.css` is intentionally empty.
+- **Never add a test suite** — none is configured and none is expected.
 
 ## Security Notes (pre-scale)
 
