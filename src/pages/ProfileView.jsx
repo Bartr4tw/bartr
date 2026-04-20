@@ -173,6 +173,11 @@ export default function ProfileView() {
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)" }}>
             {profile.location}
+            {{"Woman": "She/her", "Man": "He/him", "Non-binary": "They/them"}[profile.gender] && (
+              <span style={{ marginLeft: 6, color: "rgba(255,255,255,0.65)" }}>
+                · {{"Woman": "She/her", "Man": "He/him", "Non-binary": "They/them"}[profile.gender]}
+              </span>
+            )}
             {profile.created_at && (
               <span style={{ marginLeft: 8, color: "rgba(255,255,255,0.55)" }}>
                 · Joined {formatMemberSince(profile.created_at)}

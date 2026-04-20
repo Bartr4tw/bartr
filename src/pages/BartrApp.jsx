@@ -54,6 +54,8 @@ async function enrichWithTradeRequests(profiles) {
   return profiles.map((p) => ({ ...p, tradeRequest: byUserId[p.id] || null }));
 }
 
+const PRONOUN_MAP = { Woman: "She/her", Man: "He/him", "Non-binary": "They/them" };
+
 const DEFAULT_FILTERS = {
   gender_preference: [], age_min: 18, age_max: 60,
   boroughs: [], swap_preference: [], skill_categories: [],
@@ -241,7 +243,9 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
                 {profile.name}{profile.age ? `, ${profile.age}` : ""}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.82)" }}>📍 {profile.location}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.82)" }}>
+              📍 {profile.location}{PRONOUN_MAP[profile.gender] ? ` · ${PRONOUN_MAP[profile.gender]}` : ""}
+            </div>
           </div>
         </div>
 
