@@ -895,7 +895,7 @@ export default function BartrApp({ profile, session }) {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 48 }}>
                     <button onClick={() => handleSwipe("left")} style={{
                       width: 58, height: 58, borderRadius: "50%",
                       background: lastAction === "left" ? C.sandDark : C.sand,
@@ -911,13 +911,6 @@ export default function BartrApp({ profile, session }) {
                       display: "flex", alignItems: "center", justifyContent: "center",
                       boxShadow: "0 0 24px rgba(212,113,74,0.15)",
                     }}>⚡</button>
-                    <button style={{
-                      width: 58, height: 58, borderRadius: "50%",
-                      background: C.sand,
-                      border: `1px solid ${C.sandDark}`,
-                      fontSize: 20, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>⭐</button>
                   </div>
                   <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: C.barkLight, letterSpacing: 0.5 }}>
                     SWIPE OR TAP · ✕ SKIP · ⚡ CONNECT
