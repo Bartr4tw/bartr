@@ -432,21 +432,11 @@ export default function ProfileView() {
                   setDeleting(true);
                   try {
                     const headers = await getAuthHeaders();
-                    await Promise.all([
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?sender_id=eq.${userId}`, { method: "DELETE", headers }),
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?receiver_id=eq.${userId}`, { method: "DELETE", headers }),
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${userId}`, { method: "DELETE", headers }),
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiped_id=eq.${userId}`, { method: "DELETE", headers }),
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${userId}`, { method: "DELETE", headers }),
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_b=eq.${userId}`, { method: "DELETE", headers }),
-                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=eq.${userId}`, { method: "DELETE", headers }),
-                    ]);
-                    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, { method: "DELETE", headers });
-                    // Delete the auth user via Edge Function (requires service role key, safe server-side)
-                    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
                       method: "POST",
                       headers,
                     });
+                    if (!res.ok) throw new Error("Delete failed");
                     await supabase.auth.signOut();
                     window.location.href = "/";
                   } catch {

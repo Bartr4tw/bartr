@@ -19,12 +19,12 @@ Deno.serve(async (req) => {
   }
 
   // Verify the caller's JWT to get their user ID
-  const userClient = createClient(
+  const anonClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } } },
   );
-  const { data: { user }, error: userError } = await userClient.auth.getUser();
+  const { data: { user }, error: userError } = await anonClient.auth.getUser();
   if (userError || !user) {
     return new Response(JSON.stringify({ error: "Invalid token" }), {
       status: 401,
@@ -32,12 +32,30 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Use service role key to delete the auth user
-  const adminClient = createClient(
+  const uid = user.id;
+
+  // Use service role client — bypasses RLS for all deletes
+  const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
-  const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
+
+  // Delete all user data in parallel
+  await Promise.all([
+    admin.from("messages").delete().eq("sender_id", uid),
+    admin.from("messages").delete().eq("receiver_id", uid),
+    admin.from("swipes").delete().eq("swiper_id", uid),
+    admin.from("swipes").delete().eq("swiped_id", uid),
+    admin.from("matches").delete().eq("user_a", uid),
+    admin.from("matches").delete().eq("user_b", uid),
+    admin.from("trade_requests").delete().eq("user_id", uid),
+  ]);
+
+  // Delete profile row after related data is gone
+  await admin.from("profiles").delete().eq("id", uid);
+
+  // Delete the auth user last
+  const { error: deleteError } = await admin.auth.admin.deleteUser(uid);
   if (deleteError) {
     return new Response(JSON.stringify({ error: deleteError.message }), {
       status: 500,
