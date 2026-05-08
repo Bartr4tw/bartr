@@ -411,7 +411,7 @@ export default function ProfileView() {
             fontFamily: "'DM Sans', sans-serif",
           }}>
             <div style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: C.bark, marginBottom: 10 }}>
-              Delete account?
+              Are you sure you want to delete your account?
             </div>
             <div style={{ fontSize: 15, color: C.barkLight, lineHeight: 1.5, marginBottom: 28 }}>
               This will permanently delete your profile, matches, and messages. This cannot be undone.
@@ -426,7 +426,7 @@ export default function ProfileView() {
                   borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
                   cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
                 }}
-              >Cancel</button>
+              >No</button>
               <button
                 onClick={async () => {
                   setDeleting(true);
@@ -462,7 +462,7 @@ export default function ProfileView() {
                   cursor: deleting ? "not-allowed" : "pointer",
                   fontFamily: "'DM Sans', sans-serif", opacity: deleting ? 0.6 : 1,
                 }}
-              >{deleting ? "Deleting..." : "Delete"}</button>
+              >{deleting ? "Deleting..." : "Yes"}</button>
             </div>
           </div>
         </div>
@@ -503,13 +503,13 @@ export default function ProfileView() {
             <button
               onClick={() => setShowDeleteConfirm(true)}
               style={{
-                width: 50, height: 50, flexShrink: 0,
-                background: "transparent", border: `1.5px solid ${C.sandDark}`,
-                borderRadius: 100, color: C.barkLight, fontSize: 18,
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                flex: 1, padding: "14px", minHeight: 50,
+                background: "transparent", border: "none",
+                borderRadius: 100, color: C.barkLight, fontSize: 14,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                textDecoration: "underline",
               }}
-              title="Delete account"
-            >🗑️</button>
+            >Delete Account</button>
           </>
         ) : (
           <>
