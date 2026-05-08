@@ -18,6 +18,10 @@ export default function Onboarding({ user, onComplete }) {
   const [bio, setBio] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
+  const [instagramHandle, setInstagramHandle] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [offering, setOffering] = useState(null);
   const [seeking, setSeeking] = useState([]);
   const [availability, setAvailability] = useState([]);
@@ -26,6 +30,13 @@ export default function Onboarding({ user, onComplete }) {
   const [fieldErrors, setFieldErrors] = useState({});
 
   const clearError = (field) => setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
 
   const toggleSeeking = (label) => {
     setSeeking((prev) =>
@@ -46,6 +57,28 @@ export default function Onboarding({ user, onComplete }) {
 
     const { data: { session } } = await supabase.auth.getSession();
 
+    let avatarUrl = null;
+    if (avatarFile && session?.access_token) {
+      const ext = avatarFile.name.split(".").pop().toLowerCase();
+      const path = `${user.id}.${ext}`;
+      const uploadRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/avatars/${path}`,
+        {
+          method: "POST",
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": avatarFile.type,
+            "x-upsert": "true",
+          },
+          body: avatarFile,
+        }
+      );
+      if (uploadRes.ok) {
+        avatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${path}?t=${Date.now()}`;
+      }
+    }
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles`, {
       method: "POST",
       headers: {
@@ -61,6 +94,9 @@ export default function Onboarding({ user, onComplete }) {
         bio,
         age: age !== "" ? parseInt(age, 10) : null,
         gender: gender || null,
+        instagram_handle: instagramHandle.trim() || null,
+        linkedin_url: linkedinUrl.trim() || null,
+        avatar_url: avatarUrl,
         offering: offering.label,
         offering_icon: offering.icon,
         seeking: seeking.join(","),
@@ -158,6 +194,41 @@ export default function Onboarding({ user, onComplete }) {
                 This helps people know who they're trading with.
               </div>
 
+              {/* Photo */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
+                <div style={{ position: "relative" }}>
+                  {avatarPreview ? (
+                    <img src={avatarPreview} style={{
+                      width: 88, height: 88, borderRadius: "50%", objectFit: "cover",
+                      border: `2px solid ${C.sandDark}`,
+                    }} />
+                  ) : (
+                    <div style={{
+                      width: 88, height: 88, borderRadius: "50%",
+                      background: C.sand, border: `2px solid ${C.sandDark}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "'Fraunces', serif", fontWeight: 600,
+                      fontSize: 28, color: C.terracotta,
+                    }}>
+                      {fullName ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
+                    </div>
+                  )}
+                  <label style={{
+                    position: "absolute", bottom: 0, right: 0,
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: C.terracotta, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, border: `2px solid ${C.cream}`,
+                  }}>
+                    📷
+                    <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: "none" }} />
+                  </label>
+                </div>
+                <div style={{ fontSize: 12, color: C.barkLight, marginTop: 8 }}>
+                  {avatarFile ? "Photo ready" : "Add a profile photo (optional)"}
+                </div>
+              </div>
+
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Your name</label>
                 <input type="text" placeholder="Your name" value={fullName}
@@ -232,6 +303,20 @@ export default function Onboarding({ user, onComplete }) {
                   })}
                 </div>
                 {fieldError("gender")}
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Instagram <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <input type="text" placeholder="@yourhandle" value={instagramHandle}
+                  onChange={(e) => setInstagramHandle(e.target.value)}
+                  style={inputStyle} />
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>LinkedIn <span style={{ color: C.sandDark }}>(optional)</span></label>
+                <input type="text" placeholder="linkedin.com/in/yourname" value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  style={inputStyle} />
               </div>
 
               <div style={{ marginBottom: 24 }}>
