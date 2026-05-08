@@ -668,10 +668,34 @@ export default function EditProfile() {
                 </div>
               </div>
 
-              {/* Wanting skill */}
+              {/* Wanting skill — locked to the user's established seeking skills */}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>In exchange for</label>
-                <SkillPicker mode="single" skills={SKILLS} value={trWanting} onChange={setTrWanting} exclude={trOffering?.label} />
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {seeking.filter((label) => label !== trOffering?.label).map((label) => {
+                    const skill = SKILLS.find((s) => s.label === label) || { icon: "✨", label };
+                    const active = trWanting?.label === label;
+                    return (
+                      <button key={label} type="button"
+                        onClick={() => setTrWanting(active ? null : skill)}
+                        style={{
+                          padding: "10px 16px", minHeight: 44, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1.5px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.bark,
+                          fontSize: 14, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          transition: "all 0.15s",
+                        }}
+                      >{skill.icon} {label}</button>
+                    );
+                  })}
+                </div>
+                {seeking.length === 0 && (
+                  <div style={{ fontSize: 12, color: C.barkLight, marginTop: 8 }}>
+                    Set your learning skills above first.
+                  </div>
+                )}
               </div>
 
               {/* Wanting qty + unit */}
