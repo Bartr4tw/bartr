@@ -50,7 +50,7 @@ We may update these terms from time to time. Continued use of Bartr after change
 These terms are governed by the laws of the State of New York, without regard to conflict of law principles.
 
 12. Contact
-Questions? Reach us at hello@bartr.app.`;
+Questions? Reach us at bartropen4biz@gmail.com.`;
 
 const PRIVACY = `Privacy Policy
 
@@ -94,7 +94,7 @@ We use industry-standard security practices to protect your data, including encr
 Bartr is intended for users 18 and older. We do not knowingly collect information from anyone under 18.
 
 9. Your Rights
-You may update or delete your account at any time from your profile page. To request a copy of your data or raise a privacy concern, contact us at hello@bartr.app.
+You may update or delete your account at any time from your profile page. To request a copy of your data or raise a privacy concern, contact us at bartropen4biz@gmail.com.
 
 10. Changes to This Policy
 We may update this policy as the platform evolves. We will note the date of the last update at the top of this page.
@@ -103,7 +103,7 @@ We may update this policy as the platform evolves. We will note the date of the 
 This policy is governed by the laws of the State of New York.
 
 12. Contact
-Bartr — hello@bartr.app`;
+Bartr — bartropen4biz@gmail.com`;
 
 export default function Auth() {
   const [mode, setMode] = useState("login");
