@@ -17,7 +17,7 @@ Last updated: May 8, 2025
 Welcome to Bartr. By creating an account, you agree to these Terms of Service. Please read them carefully.
 
 1. What Bartr Is
-Bartr is a skill and hobby trading platform that connects people who want to teach something with people who want to learn. No money changes hands through Bartr — all exchanges are peer-to-peer skill trades arranged directly between users.
+Bartr is a skill and hobby trading platform that connects people who want to teach something with people who want to learn. Bartr facilitates introductions between users — what happens after that connection is made is solely between the individuals involved.
 
 2. Eligibility
 You must be at least 18 years old to use Bartr. By signing up, you confirm that you are 18 or older.
