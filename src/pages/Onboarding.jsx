@@ -225,7 +225,7 @@ export default function Onboarding({ user, onComplete }) {
                   </label>
                 </div>
                 <div style={{ fontSize: 12, color: C.barkLight, marginTop: 8 }}>
-                  {avatarFile ? "Photo ready" : "Add a profile photo (optional)"}
+                  {avatarFile ? "Photo ready" : <span style={{ color: fieldErrors.avatar ? C.terracotta : C.barkLight }}>Add a profile photo</span>}
                 </div>
               </div>
 
@@ -336,6 +336,7 @@ export default function Onboarding({ user, onComplete }) {
                     errs.age = "Please enter a valid age between 18 and 99";
                   }
                   if (!gender) errs.gender = "Please select a gender";
+                  if (!avatarFile) errs.avatar = "Please add a profile photo";
                   if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
                   setFieldErrors({});
                   setStep(2);
