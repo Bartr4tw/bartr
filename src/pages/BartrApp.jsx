@@ -572,6 +572,7 @@ export default function BartrApp({ profile, session }) {
   const [browseProfiles, setBrowseProfiles] = useState([]);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseCounts, setBrowseCounts] = useState({});
+  const [browseSkillCounts, setBrowseSkillCounts] = useState({});
 
   // Fetch profiles excluding anyone already swiped on or matched with
   useEffect(() => {
@@ -639,16 +640,21 @@ export default function BartrApp({ profile, session }) {
         .then((rows) => {
           if (!Array.isArray(rows)) return;
           const counts = {};
+          const skillCounts = {};
           rows.forEach((row) => {
             const cats = new Set();
             [row.offering, row.offering_secondary].forEach((label) => {
               if (!label) return;
               const skill = SKILLS.find((s) => s.label === label);
-              if (skill) cats.add(skill.category);
+              if (skill) {
+                cats.add(skill.category);
+                skillCounts[label] = (skillCounts[label] || 0) + 1;
+              }
             });
             cats.forEach((cat) => { counts[cat] = (counts[cat] || 0) + 1; });
           });
           setBrowseCounts(counts);
+          setBrowseSkillCounts(skillCounts);
         })
         .catch(() => {});
     });
@@ -959,7 +965,7 @@ export default function BartrApp({ profile, session }) {
                         fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
                         transition: "all 0.15s",
                       }}>
-                        {skill.icon} {skill.label}
+                        {skill.icon} {skill.label}{browseSkillCounts[skill.label] ? ` (${browseSkillCounts[skill.label]})` : ""}
                       </button>
                     );
                   })}
