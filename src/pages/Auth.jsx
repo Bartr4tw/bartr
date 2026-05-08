@@ -10,6 +10,101 @@ const C = {
 };
 
 
+const TERMS = `Terms of Service
+
+Last updated: May 8, 2025
+
+Welcome to Bartr. By creating an account, you agree to these Terms of Service. Please read them carefully.
+
+1. What Bartr Is
+Bartr is a skill and hobby trading platform that connects people who want to teach something with people who want to learn. No money changes hands through Bartr — all exchanges are peer-to-peer skill trades arranged directly between users.
+
+2. Eligibility
+You must be at least 18 years old to use Bartr. By signing up, you confirm that you are 18 or older.
+
+3. Your Account
+You are responsible for keeping your account credentials secure. You agree to provide accurate information on your profile, including the skills you claim to offer. Bartr does not verify the qualifications, certifications, or experience level of any user.
+
+4. User Conduct
+You agree not to use Bartr to harass, threaten, or harm other users. You agree not to post false, misleading, or fraudulent information on your profile. You agree not to use the platform for any commercial solicitation or for any purpose other than genuine skill trading.
+
+5. In-Person Meetups
+Bartr may facilitate connections between users who choose to meet in person. Bartr is not responsible for what happens during or after those meetups. You agree to exercise your own judgment and take appropriate precautions when meeting another user in person. Bartr strongly recommends meeting in public places for initial exchanges.
+
+6. Skill Quality and Trade Outcomes
+Bartr does not guarantee the quality, accuracy, or outcome of any skill exchange. If a trade does not go as expected — including no-shows, poor instruction, or unmet expectations — Bartr is not liable. Disputes are between the users involved.
+
+7. Content You Post
+By uploading a photo or writing a bio, you grant Bartr a non-exclusive license to display that content within the platform. You retain ownership of your content. Do not post content that is offensive, explicit, or belongs to someone else.
+
+8. Limitation of Liability
+To the fullest extent permitted by law, Bartr and its founders, employees, and affiliates are not liable for any damages arising from your use of the platform, including but not limited to: personal injury or harm resulting from in-person meetups, failed or unsatisfactory skill exchanges, loss of data, or unauthorized access to your account.
+
+9. Termination
+Bartr reserves the right to suspend or terminate any account that violates these terms, at its sole discretion, without prior notice.
+
+10. Changes to These Terms
+We may update these terms from time to time. Continued use of Bartr after changes are posted constitutes acceptance of the updated terms.
+
+11. Governing Law
+These terms are governed by the laws of the State of New York, without regard to conflict of law principles.
+
+12. Contact
+Questions? Reach us at hello@bartr.app.`;
+
+const PRIVACY = `Privacy Policy
+
+Last updated: May 8, 2025
+
+This Privacy Policy explains what information Bartr collects, how we use it, and your rights around it.
+
+1. What We Collect
+When you create an account and use Bartr, we collect:
+- Email address (used for login and account recovery)
+- Profile information: name, age, neighborhood, gender, bio, profile photo
+- Skills you offer and want to learn
+- Availability and swap preferences
+- Optional social links: Instagram handle, LinkedIn URL
+- Messages you send to other users
+- Swipe activity (who you have and have not matched with)
+
+2. How We Use Your Information
+We use your information to:
+- Show your profile to other users in the Discover feed
+- Match you with users who have complementary skills
+- Deliver messages between matched users
+- Improve and maintain the platform
+
+3. What We Do Not Do
+Bartr does not sell your personal information to third parties. Bartr does not run advertising. Bartr does not share your data with third parties except as required to operate the service (e.g., our database provider, Supabase).
+
+4. Profile Visibility
+Your profile — including your name, photo, neighborhood, skills, bio, and availability — is visible to other logged-in Bartr users. Your email address is never shown to other users.
+
+5. Messages
+Messages are stored in our database and are only accessible to the sender and recipient. Bartr does not read your messages except as required to investigate reported violations of our Terms of Service.
+
+6. Data Retention
+If you delete your account, we permanently delete your profile, messages, matches, and swipe history. Your email address is also removed from our authentication system.
+
+7. Security
+We use industry-standard security practices to protect your data, including encrypted connections and access controls. No system is perfectly secure, and we cannot guarantee absolute security.
+
+8. Children's Privacy
+Bartr is intended for users 18 and older. We do not knowingly collect information from anyone under 18.
+
+9. Your Rights
+You may update or delete your account at any time from your profile page. To request a copy of your data or raise a privacy concern, contact us at hello@bartr.app.
+
+10. Changes to This Policy
+We may update this policy as the platform evolves. We will note the date of the last update at the top of this page.
+
+11. Governing Law
+This policy is governed by the laws of the State of New York.
+
+12. Contact
+Bartr — hello@bartr.app`;
+
 export default function Auth() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -19,6 +114,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [legalModal, setLegalModal] = useState(null);
 
   const handleSubmit = async () => {
     setError("");
@@ -240,11 +336,68 @@ export default function Auth() {
           {/* Terms */}
           {mode === "signup" && (
             <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: C.barkLight, lineHeight: 1.6 }}>
-              By signing up you agree to our terms of service and privacy policy.
+              By signing up you agree to our{" "}
+              <button onClick={() => setLegalModal("terms")} style={{
+                background: "none", border: "none", padding: 0,
+                color: C.clay, fontSize: 11, cursor: "pointer",
+                textDecoration: "underline", fontFamily: "'DM Sans', sans-serif",
+              }}>terms of service</button>
+              {" "}and{" "}
+              <button onClick={() => setLegalModal("privacy")} style={{
+                background: "none", border: "none", padding: 0,
+                color: C.clay, fontSize: 11, cursor: "pointer",
+                textDecoration: "underline", fontFamily: "'DM Sans', sans-serif",
+              }}>privacy policy</button>.
             </div>
           )}
         </div>
       </div>
+
+      {/* Legal modal */}
+      {legalModal && (
+        <div
+          onClick={() => setLegalModal(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(74,55,40,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "24px 16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: C.warmWhite, borderRadius: 20,
+              width: "100%", maxWidth: 560,
+              maxHeight: "80vh", display: "flex", flexDirection: "column",
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: "0 8px 40px rgba(74,55,40,0.18)",
+            }}
+          >
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "20px 24px 16px",
+              borderBottom: `1px solid ${C.sandDark}`,
+            }}>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: C.bark }}>
+                {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
+              </div>
+              <button onClick={() => setLegalModal(null)} style={{
+                background: "none", border: "none", fontSize: 20,
+                color: C.barkLight, cursor: "pointer", lineHeight: 1,
+                minWidth: 32, minHeight: 32,
+              }}>×</button>
+            </div>
+            <div style={{
+              overflowY: "auto", padding: "20px 24px 28px",
+              fontSize: 13, color: C.bark, lineHeight: 1.7,
+              whiteSpace: "pre-wrap",
+            }}>
+              {legalModal === "terms" ? TERMS : PRIVACY}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
