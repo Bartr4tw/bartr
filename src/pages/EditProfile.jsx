@@ -611,10 +611,33 @@ export default function EditProfile() {
               background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
               borderRadius: 14, padding: "18px",
             }}>
-              {/* Offering skill */}
+              {/* Offering skill — locked to the user's established offerings */}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>You offer</label>
-                <SkillPicker mode="single" skills={SKILLS} value={trOffering} onChange={setTrOffering} />
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {[offering, offeringSecondary].filter(Boolean).map((skill) => {
+                    const active = trOffering?.label === skill.label;
+                    return (
+                      <button key={skill.label} type="button"
+                        onClick={() => setTrOffering(active ? null : skill)}
+                        style={{
+                          padding: "10px 16px", minHeight: 44, borderRadius: 100,
+                          border: active ? `1.5px solid ${C.terracotta}` : `1.5px solid ${C.sandDark}`,
+                          background: active ? "#FDF0EA" : C.sand,
+                          color: active ? C.clayDeep : C.bark,
+                          fontSize: 14, fontWeight: active ? 500 : 400,
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          transition: "all 0.15s",
+                        }}
+                      >{skill.icon} {skill.label}</button>
+                    );
+                  })}
+                </div>
+                {!offering && (
+                  <div style={{ fontSize: 12, color: C.barkLight, marginTop: 8 }}>
+                    Set your offering skills above first.
+                  </div>
+                )}
               </div>
 
               {/* Offering qty + unit */}
