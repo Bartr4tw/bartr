@@ -332,8 +332,10 @@ export default function Onboarding({ user, onComplete }) {
                   if (!fullName.trim()) errs.fullName = "This field is required";
                   if (!neighborhood) errs.neighborhood = "This field is required";
                   const ageNum = parseInt(age, 10);
-                  if (!age || isNaN(ageNum) || ageNum < 18 || ageNum > 99) {
-                    errs.age = "Please enter a valid age between 18 and 99";
+                  if (!age || isNaN(ageNum) || ageNum > 99) {
+                    errs.age = "Please enter a valid age";
+                  } else if (ageNum < 18) {
+                    errs.age = "You must be 18 or older to use Bartr";
                   }
                   if (!gender) errs.gender = "Please select a gender";
                   if (!avatarFile) errs.avatar = "Please add a profile photo";
