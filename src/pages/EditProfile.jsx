@@ -50,6 +50,7 @@ export default function EditProfile() {
   const [availability, setAvailability] = useState([]);
   const [swapPreference, setSwapPreference] = useState([]);
   const [offering, setOffering] = useState(null);
+  const [offeringSecondary, setOfferingSecondary] = useState(null);
   const [seeking, setSeeking] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
@@ -94,6 +95,10 @@ export default function EditProfile() {
         setAvatarPreview(p.avatar_url || null);
         const offeringSkill = SKILLS.find((s) => s.label === p.offering) || { icon: "✨", label: p.offering };
         setOffering(p.offering ? offeringSkill : null);
+        const offeringSecondarySkill = p.offering_secondary
+          ? (SKILLS.find((s) => s.label === p.offering_secondary) || { icon: "✨", label: p.offering_secondary })
+          : null;
+        setOfferingSecondary(offeringSecondarySkill);
         setSeeking(p.seeking ? p.seeking.split(",").map((s) => s.trim()).filter(Boolean) : []);
       }
       // Fetch active trade request
@@ -244,6 +249,8 @@ export default function EditProfile() {
           swap_preference: swapPreference,
           offering: offering.label,
           offering_icon: offering.icon,
+          offering_secondary: offeringSecondary?.label || null,
+          offering_secondary_icon: offeringSecondary?.icon || null,
           seeking: seeking.join(","),
           avatar_url: finalAvatarUrl,
         }),
@@ -501,8 +508,14 @@ export default function EditProfile() {
           <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
             What you offer <span style={{ color: C.terracotta, fontFamily: "'DM Sans', sans-serif", fontSize: 16 }}>*</span>
           </div>
+          <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5, fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Primary</div>
           <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>Pick one skill or hobby you'd love to share.</div>
-          <SkillPicker mode="single" skills={SKILLS} value={offering} onChange={setOffering} />
+          <SkillPicker mode="single" skills={SKILLS} value={offering} onChange={(v) => { setOffering(v); if (offeringSecondary?.label === v?.label) setOfferingSecondary(null); }} />
+          <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5, fontWeight: 600, textTransform: "uppercase", marginTop: 20, marginBottom: 8 }}>
+            Secondary <span style={{ fontSize: 10, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span>
+          </div>
+          <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 16 }}>Add a second skill you can offer.</div>
+          <SkillPicker mode="single" skills={SKILLS} value={offeringSecondary} onChange={(v) => setOfferingSecondary(v?.label === offering?.label ? null : v)} exclude={offering?.label} />
         </div>
 
         {/* Seeking */}

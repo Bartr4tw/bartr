@@ -258,13 +258,26 @@ export default function ProfileView() {
           background: C.sand, border: `1px solid ${C.sandDark}`,
           borderRadius: 14, padding: "18px 20px", marginBottom: 20,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          {profile.offering_secondary && (
+            <div style={{ fontSize: 9, letterSpacing: 1, color: C.barkLight, fontWeight: 600, marginBottom: 4 }}>PRIMARY</div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: profile.offering_secondary ? 12 : 6 }}>
             <span style={{ fontSize: 28 }}>{profile.offering_icon}</span>
-            <span style={{
-              fontFamily: "'Fraunces', serif", fontWeight: 600,
-              fontSize: 20, color: C.bark,
-            }}>{profile.offering}</span>
+            <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: 20, color: C.bark }}>
+              {profile.offering}
+            </span>
           </div>
+          {profile.offering_secondary && (
+            <>
+              <div style={{ fontSize: 9, letterSpacing: 1, color: C.barkLight, fontWeight: 600, marginBottom: 4 }}>SECONDARY</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: profile.bio ? 12 : 0 }}>
+                <span style={{ fontSize: 22 }}>{profile.offering_secondary_icon}</span>
+                <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 500, fontSize: 16, color: C.barkLight }}>
+                  {profile.offering_secondary}
+                </span>
+              </div>
+            </>
+          )}
           {profile.bio && (
             <p style={{ fontSize: 14, color: C.barkLight, lineHeight: 1.6, margin: 0 }}>
               {profile.bio}

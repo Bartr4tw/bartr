@@ -23,6 +23,7 @@ export default function Onboarding({ user, onComplete }) {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [offering, setOffering] = useState(null);
+  const [offeringSecondary, setOfferingSecondary] = useState(null);
   const [seeking, setSeeking] = useState([]);
   const [availability, setAvailability] = useState([]);
   const [swapPreference, setSwapPreference] = useState([]);
@@ -99,6 +100,8 @@ export default function Onboarding({ user, onComplete }) {
         avatar_url: avatarUrl,
         offering: offering.label,
         offering_icon: offering.icon,
+        offering_secondary: offeringSecondary?.label || null,
+        offering_secondary_icon: offeringSecondary?.icon || null,
         seeking: seeking.join(","),
         availability,
         swap_preference: swapPreference,
@@ -358,14 +361,24 @@ export default function Onboarding({ user, onComplete }) {
                 Pick the skill or hobby you'd love to share with someone.
               </div>
 
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5, fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Primary</div>
+              <div style={{ marginBottom: 20 }}>
                 <SkillPicker mode="single" skills={SKILLS} value={offering}
-                  onChange={(v) => { setOffering(v); clearError("offering"); }} />
+                  onChange={(v) => { setOffering(v); if (offeringSecondary?.label === v?.label) setOfferingSecondary(null); clearError("offering"); }} />
               </div>
 
               {fieldErrors.offering && (
                 <div style={{ fontSize: 12, color: C.barkLight, marginBottom: 12 }}>{fieldErrors.offering}</div>
               )}
+
+              <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 0.5, fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>
+                Secondary <span style={{ fontSize: 10, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span>
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <SkillPicker mode="single" skills={SKILLS} value={offeringSecondary}
+                  onChange={(v) => setOfferingSecondary(v?.label === offering?.label ? null : v)}
+                  exclude={offering?.label} />
+              </div>
 
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => { setFieldErrors({}); setStep(1); }} style={{ ...ghostBtn, flex: 1 }}>← Back</button>

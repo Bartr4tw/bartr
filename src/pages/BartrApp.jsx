@@ -26,6 +26,8 @@ function transformProfile(row) {
     avatarUrl: row.avatar_url || null,
     offering: row.offering,
     offeringIcon: row.offering_icon,
+    offeringSecondary: row.offering_secondary || null,
+    offeringSecondaryIcon: row.offering_secondary_icon || null,
     offeringDesc: row.bio,
     seeking: seekingLabels,
     seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || "✨"),
@@ -299,20 +301,27 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
           )}
 
           {/* Match signal banner */}
-          {profile.seeking.includes(yourProfile.offering) && (
-            <div style={{
-              margin: "12px 16px 0",
-              background: `rgba(90,158,111,0.08)`,
-              border: `1px solid rgba(90,158,111,0.28)`,
-              borderRadius: 12, padding: "10px 14px",
-              display: "flex", alignItems: "center", gap: 8,
-            }}>
-              <span style={{ fontSize: 15 }}>⚡</span>
-              <span style={{ fontSize: 13, color: "#5a9e6f", fontWeight: 500, lineHeight: 1.4 }}>
-                {profile.name.split(" ")[0]} wants to learn {yourProfile.offering}
-              </span>
-            </div>
-          )}
+          {(() => {
+            const matchedSkill = profile.seeking.includes(yourProfile.offering)
+              ? yourProfile.offering
+              : (yourProfile.offeringSecondary && profile.seeking.includes(yourProfile.offeringSecondary))
+                ? yourProfile.offeringSecondary
+                : null;
+            return matchedSkill ? (
+              <div style={{
+                margin: "12px 16px 0",
+                background: `rgba(90,158,111,0.08)`,
+                border: `1px solid rgba(90,158,111,0.28)`,
+                borderRadius: 12, padding: "10px 14px",
+                display: "flex", alignItems: "center", gap: 8,
+              }}>
+                <span style={{ fontSize: 15 }}>⚡</span>
+                <span style={{ fontSize: 13, color: "#5a9e6f", fontWeight: 500, lineHeight: 1.4 }}>
+                  {profile.name.split(" ")[0]} wants to learn {matchedSkill}
+                </span>
+              </div>
+            ) : null;
+          })()}
 
           {/* Offering block */}
           <div style={{
@@ -321,12 +330,26 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
             borderRadius: 14, padding: "14px 16px",
           }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 8 }}>OFFERING</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: profile.bio ? 10 : 0 }}>
+            {profile.offeringSecondary && (
+              <div style={{ fontSize: 9, letterSpacing: 1, color: C.barkLight, fontWeight: 600, marginBottom: 4 }}>PRIMARY</div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: profile.offeringSecondary ? 10 : (profile.bio ? 10 : 0) }}>
               <span style={{ fontSize: 32, flexShrink: 0 }}>{profile.offeringIcon}</span>
               <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark }}>
                 {profile.offering}
               </div>
             </div>
+            {profile.offeringSecondary && (
+              <>
+                <div style={{ fontSize: 9, letterSpacing: 1, color: C.barkLight, fontWeight: 600, marginBottom: 4 }}>SECONDARY</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: profile.bio ? 10 : 0 }}>
+                  <span style={{ fontSize: 22, flexShrink: 0 }}>{profile.offeringSecondaryIcon}</span>
+                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: 15, fontWeight: 500, color: C.barkLight }}>
+                    {profile.offeringSecondary}
+                  </div>
+                </div>
+              </>
+            )}
             {profile.bio && (
               <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
             )}
@@ -419,7 +442,7 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
               <div style={{ fontSize: 9, letterSpacing: 2, color: C.barkLight, fontWeight: 700, marginBottom: 8 }}>WANTS TO LEARN</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {profile.seeking.map((s, i) => {
-                  const isMatch = s === yourProfile.offering;
+                  const isMatch = s === yourProfile.offering || s === yourProfile.offeringSecondary;
                   return (
                     <div key={s} style={{
                       borderRadius: 10, padding: "10px 6px", textAlign: "center",
@@ -497,6 +520,8 @@ export default function BartrApp({ profile, session }) {
     location: profile?.location || "",
     offering: profile?.offering || "",
     offeringIcon: profile?.offering_icon || "📊",
+    offeringSecondary: profile?.offering_secondary || null,
+    offeringSecondaryIcon: profile?.offering_secondary_icon || null,
     seeking: seekingLabels,
     seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || "✨"),
   };
