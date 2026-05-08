@@ -630,50 +630,52 @@ export default function BartrApp({ profile, session }) {
   useEffect(() => {
     if (activeTab !== 0 || !profile?.id || browseFetchedRef.current) return;
     browseFetchedRef.current = true;
-    const headers = { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY };
-    fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=offering,offering_secondary&id=neq.${profile.id}`,
-      { headers }
-    )
-      .then((r) => r.json())
-      .then((rows) => {
-        if (!Array.isArray(rows)) return;
-        const counts = {};
-        rows.forEach((row) => {
-          const cats = new Set();
-          [row.offering, row.offering_secondary].forEach((label) => {
-            if (!label) return;
-            const skill = SKILLS.find((s) => s.label === label);
-            if (skill) cats.add(skill.category);
+    getAuthHeaders().then((headers) => {
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=offering,offering_secondary&id=neq.${profile.id}`,
+        { headers }
+      )
+        .then((r) => r.json())
+        .then((rows) => {
+          if (!Array.isArray(rows)) return;
+          const counts = {};
+          rows.forEach((row) => {
+            const cats = new Set();
+            [row.offering, row.offering_secondary].forEach((label) => {
+              if (!label) return;
+              const skill = SKILLS.find((s) => s.label === label);
+              if (skill) cats.add(skill.category);
+            });
+            cats.forEach((cat) => { counts[cat] = (counts[cat] || 0) + 1; });
           });
-          cats.forEach((cat) => { counts[cat] = (counts[cat] || 0) + 1; });
-        });
-        setBrowseCounts(counts);
-      })
-      .catch(() => {});
+          setBrowseCounts(counts);
+        })
+        .catch(() => {});
+    });
   }, [activeTab, profile?.id]);
 
   // Fetch profiles for the active browse skill
   useEffect(() => {
     if (!browseSkill || !profile?.id) return;
     setBrowseLoading(true);
-    const headers = { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY };
     const base = import.meta.env.VITE_SUPABASE_URL;
     const enc = encodeURIComponent(browseSkill);
-    Promise.all([
-      fetch(`${base}/rest/v1/profiles?offering=eq.${enc}&id=neq.${profile.id}&select=*`, { headers }).then((r) => r.json()),
-      fetch(`${base}/rest/v1/profiles?offering_secondary=eq.${enc}&id=neq.${profile.id}&select=*`, { headers }).then((r) => r.json()),
-    ])
-      .then(([primary, secondary]) => {
-        const seen = new Set();
-        const merged = [
-          ...(Array.isArray(primary) ? primary : []),
-          ...(Array.isArray(secondary) ? secondary : []),
-        ].filter((row) => { if (seen.has(row.id)) return false; seen.add(row.id); return true; });
-        setBrowseProfiles(merged.map(transformProfile));
-        setBrowseLoading(false);
-      })
-      .catch(() => setBrowseLoading(false));
+    getAuthHeaders().then((headers) => {
+      Promise.all([
+        fetch(`${base}/rest/v1/profiles?offering=eq.${enc}&id=neq.${profile.id}&select=*`, { headers }).then((r) => r.json()),
+        fetch(`${base}/rest/v1/profiles?offering_secondary=eq.${enc}&id=neq.${profile.id}&select=*`, { headers }).then((r) => r.json()),
+      ])
+        .then(([primary, secondary]) => {
+          const seen = new Set();
+          const merged = [
+            ...(Array.isArray(primary) ? primary : []),
+            ...(Array.isArray(secondary) ? secondary : []),
+          ].filter((row) => { if (seen.has(row.id)) return false; seen.add(row.id); return true; });
+          setBrowseProfiles(merged.map(transformProfile));
+          setBrowseLoading(false);
+        })
+        .catch(() => setBrowseLoading(false));
+    });
   }, [browseSkill, profile?.id]);
 
   const width = useWindowWidth();
