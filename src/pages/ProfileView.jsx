@@ -674,7 +674,7 @@ export default function ProfileView() {
                   color: C.cream, fontSize: 15, fontWeight: 500,
                   cursor: swipeActing ? "not-allowed" : "pointer",
                   fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
-                }}>Like ⚡</button>
+                }}>Like 🤝</button>
               </>
             )}
           </>

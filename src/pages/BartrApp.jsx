@@ -132,7 +132,7 @@ function Avatar({ url, initials, size, fontSize, border }) {
 
 const TABS = [
   { label: "Browse", icon: "🔍" },
-  { label: "Discover", icon: "⚡" },
+  { label: "Discover", icon: "🔀" },
   { label: "Matches", icon: "🤝" },
   { label: "Profile", icon: "◉" },
 ];
@@ -1142,10 +1142,10 @@ export default function BartrApp({ profile, session }) {
                       fontSize: 26, cursor: "pointer", transition: "all 0.2s",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       boxShadow: "0 0 24px rgba(212,113,74,0.15)",
-                    }}>⚡</button>
+                    }}>🤝</button>
                   </div>
                   <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: C.barkLight, letterSpacing: 0.5 }}>
-                    SWIPE OR TAP · ✕ SKIP · ⚡ CONNECT
+                    SWIPE OR TAP · ✕ SKIP · 🤝 CONNECT
                   </div>
                 </>
               ) : (
