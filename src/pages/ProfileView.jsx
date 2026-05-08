@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase, getAuthHeaders } from "../lib/supabase.js";
 import { SKILLS } from "../lib/skillsData.js";
@@ -26,27 +26,103 @@ export default function ProfileView() {
   const [isSelf, setIsSelf] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const myIdRef = useRef(null);
+  const [swipeRecord, setSwipeRecord] = useState(undefined); // undefined=loading, null=none, {direction}=exists
+  const [swipeActing, setSwipeActing] = useState(false);
+  const [showMatchBanner, setShowMatchBanner] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth"; return; }
-      setIsSelf(session.user.id === userId);
+      const isSelfNow = session.user.id === userId;
+      myIdRef.current = session.user.id;
+      setIsSelf(isSelfNow);
       const headers = await getAuthHeaders();
-      const [profileRes, tradeRes] = await Promise.all([
+      const fetches = [
         fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, { headers }),
         fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=eq.${userId}&status=eq.open&limit=1`, { headers }),
-      ]);
-      const rows = await profileRes.json();
+      ];
+      if (!isSelfNow) {
+        fetches.push(fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${session.user.id}&swiped_id=eq.${userId}`,
+          { headers }
+        ));
+      }
+      const results = await Promise.all(fetches);
+      const rows = await results[0].json();
       if (!Array.isArray(rows) || !rows[0]) {
         setNotFound(true);
       } else {
         setProfile(rows[0]);
       }
-      const trRows = await tradeRes.json();
+      const trRows = await results[1].json();
       if (Array.isArray(trRows) && trRows[0]) setTradeRequest(trRows[0]);
+      if (!isSelfNow) {
+        const swipeRows = await results[2].json();
+        setSwipeRecord(Array.isArray(swipeRows) && swipeRows[0] ? swipeRows[0] : null);
+      }
       setLoading(false);
     });
   }, [userId]);
+
+  const handleLike = async () => {
+    setSwipeActing(true);
+    const myId = myIdRef.current;
+    const headers = await getAuthHeaders();
+    if (swipeRecord) {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${myId}&swiped_id=eq.${userId}`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ direction: "right" }),
+      });
+    } else {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ swiper_id: myId, swiped_id: userId, direction: "right" }),
+      });
+    }
+    setSwipeRecord({ direction: "right" });
+    // Check for mutual match
+    const theirSwipeRes = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${userId}&swiped_id=eq.${myId}&direction=eq.right`,
+      { headers }
+    );
+    const theirSwipe = await theirSwipeRes.json();
+    if (Array.isArray(theirSwipe) && theirSwipe.length > 0) {
+      const user_a = myId < userId ? myId : userId;
+      const user_b = myId < userId ? userId : myId;
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+        body: JSON.stringify({ user_a, user_b }),
+      });
+      setShowMatchBanner(true);
+      setTimeout(() => setShowMatchBanner(false), 3000);
+    }
+    setSwipeActing(false);
+  };
+
+  const handlePass = async () => {
+    setSwipeActing(true);
+    const myId = myIdRef.current;
+    const headers = await getAuthHeaders();
+    if (swipeRecord) {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${myId}&swiped_id=eq.${userId}`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ direction: "left" }),
+      });
+    } else {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ swiper_id: myId, swiped_id: userId, direction: "left" }),
+      });
+    }
+    setSwipeRecord({ direction: "left" });
+    setSwipeActing(false);
+  };
 
   if (loading) {
     return (
@@ -471,6 +547,37 @@ export default function ProfileView() {
         </div>
       )}
 
+      {/* Match banner */}
+      {showMatchBanner && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(250,246,238,0.88)",
+          backdropFilter: "blur(8px)", zIndex: 100,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
+            borderRadius: 28, padding: "44px 48px", textAlign: "center",
+            boxShadow: "0 4px 16px rgba(74,55,40,0.07), 0 24px 64px rgba(74,55,40,0.12)",
+            maxWidth: 320, margin: "0 20px",
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>⚡</div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600, color: C.terracotta, marginBottom: 8 }}>
+              Skill Match!
+            </div>
+            <div style={{ fontSize: 14, color: C.barkLight, marginBottom: 20, lineHeight: 1.6 }}>
+              You and <strong style={{ color: C.bark }}>{firstName}</strong> can trade skills
+            </div>
+            <button onClick={() => navigate(`/chat/${userId}`)} style={{
+              width: "100%", padding: "13px", minHeight: 44,
+              background: C.terracotta, border: "none", borderRadius: 100,
+              color: C.cream, fontSize: 15, fontWeight: 500, cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+            }}>Send a message</button>
+          </div>
+        </div>
+      )}
+
       {/* Sticky bottom CTA */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
@@ -516,21 +623,60 @@ export default function ProfileView() {
           </>
         ) : (
           <>
-            <button style={{
-              width: 50, height: 50, borderRadius: 14, flexShrink: 0,
-              background: C.sand, border: `1px solid ${C.sandDark}`,
-              cursor: "pointer", fontSize: 20,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>📌</button>
-            <button
-              onClick={() => navigate(`/chat/${userId}`)}
-              style={{
-                flex: 1, padding: "14px", minHeight: 50,
-                background: C.terracotta, border: "none", borderRadius: 100,
-                color: C.cream, fontSize: 15, fontWeight: 500,
-                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-              }}
-            >Message {firstName}</button>
+            {swipeRecord === undefined ? (
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: C.barkLight, fontSize: 13 }}>
+                Loading...
+              </div>
+            ) : swipeRecord?.direction === "right" ? (
+              <>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <span style={{ fontSize: 18 }}>⚡</span>
+                  <span style={{ fontSize: 14, color: C.terracotta, fontWeight: 600 }}>Liked</span>
+                </div>
+                <button onClick={() => navigate(`/chat/${userId}`)} style={{
+                  flex: 2, padding: "14px", minHeight: 50,
+                  background: C.terracotta, border: "none", borderRadius: 100,
+                  color: C.cream, fontSize: 15, fontWeight: 500,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}>Message {firstName}</button>
+              </>
+            ) : swipeRecord?.direction === "left" ? (
+              <>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 14, color: C.barkLight, fontWeight: 500 }}>Passed</span>
+                </div>
+                <button onClick={handleLike} disabled={swipeActing} style={{
+                  flex: 2, padding: "14px", minHeight: 50,
+                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                  borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
+                  cursor: swipeActing ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
+                }}>Undo</button>
+              </>
+            ) : (
+              <>
+                <button onClick={handlePass} disabled={swipeActing} style={{
+                  flex: 1, padding: "14px", minHeight: 50,
+                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                  borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
+                  cursor: swipeActing ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
+                }}>Pass</button>
+                <button onClick={() => navigate(`/chat/${userId}`)} style={{
+                  flex: 1, padding: "14px", minHeight: 50,
+                  background: C.sand, border: `1px solid ${C.sandDark}`,
+                  borderRadius: 100, color: C.bark, fontSize: 15, fontWeight: 500,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}>Message</button>
+                <button onClick={handleLike} disabled={swipeActing} style={{
+                  flex: 1, padding: "14px", minHeight: 50,
+                  background: C.terracotta, border: "none", borderRadius: 100,
+                  color: C.cream, fontSize: 15, fontWeight: 500,
+                  cursor: swipeActing ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
+                }}>Like ⚡</button>
+              </>
+            )}
           </>
         )}
       </div>

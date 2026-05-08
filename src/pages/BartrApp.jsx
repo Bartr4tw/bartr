@@ -58,6 +58,18 @@ async function enrichWithTradeRequests(profiles) {
 
 const PRONOUN_MAP = { Woman: "She/her", Man: "He/him", "Non-binary": "They/them" };
 
+const CATEGORY_EMOJI = {
+  "Sports & Fitness": "🏃", "Music": "🎵", "Tech": "💻",
+  "Arts & Crafts": "🎨", "Food": "🍳", "Languages": "🗣️", "Other": "✨",
+};
+const BROWSE_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
+
+function avatarBg(id) {
+  const palette = ["#D4714A", "#5a9e6f", "#C07A52", "#9B5C38", "#7A5C47"];
+  const n = id.replace(/-/g, "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return palette[n % palette.length];
+}
+
 const DEFAULT_FILTERS = {
   gender_preference: [], age_min: 18, age_max: 60,
   boroughs: [], swap_preference: [], skill_categories: [],
@@ -119,8 +131,9 @@ function Avatar({ url, initials, size, fontSize, border }) {
 }
 
 const TABS = [
+  { label: "Browse", icon: "🔍" },
   { label: "Discover", icon: "⚡" },
-  { label: "Matches", icon: "↔" },
+  { label: "Matches", icon: "🤝" },
   { label: "Profile", icon: "◉" },
 ];
 
@@ -551,6 +564,14 @@ export default function BartrApp({ profile, session }) {
   const [pendingFilters, setPendingFilters] = useState({ ...DEFAULT_FILTERS });
   const allProfilesRef = useRef([]);
   const sessionSwipedIds = useRef(new Set());
+  const browseFetchedRef = useRef(false);
+  const [browseCategory, setBrowseCategory] = useState(BROWSE_CATEGORIES[0]);
+  const [browseSkill, setBrowseSkill] = useState(
+    () => SKILLS.filter((s) => s.category === BROWSE_CATEGORIES[0])[0]?.label || null
+  );
+  const [browseProfiles, setBrowseProfiles] = useState([]);
+  const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseCounts, setBrowseCounts] = useState({});
 
   // Fetch profiles excluding anyone already swiped on or matched with
   useEffect(() => {
@@ -604,6 +625,56 @@ export default function BartrApp({ profile, session }) {
       setMatches((Array.isArray(profileRows) ? profileRows : []).map(transformProfile));
     });
   }, [profile?.id]);
+
+  // Fetch category people counts once on first Browse visit
+  useEffect(() => {
+    if (activeTab !== 0 || !profile?.id || browseFetchedRef.current) return;
+    browseFetchedRef.current = true;
+    const headers = { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY };
+    fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=offering,offering_secondary&id=neq.${profile.id}`,
+      { headers }
+    )
+      .then((r) => r.json())
+      .then((rows) => {
+        if (!Array.isArray(rows)) return;
+        const counts = {};
+        rows.forEach((row) => {
+          const cats = new Set();
+          [row.offering, row.offering_secondary].forEach((label) => {
+            if (!label) return;
+            const skill = SKILLS.find((s) => s.label === label);
+            if (skill) cats.add(skill.category);
+          });
+          cats.forEach((cat) => { counts[cat] = (counts[cat] || 0) + 1; });
+        });
+        setBrowseCounts(counts);
+      })
+      .catch(() => {});
+  }, [activeTab, profile?.id]);
+
+  // Fetch profiles for the active browse skill
+  useEffect(() => {
+    if (!browseSkill || !profile?.id) return;
+    setBrowseLoading(true);
+    const headers = { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY };
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    const enc = encodeURIComponent(browseSkill);
+    Promise.all([
+      fetch(`${base}/rest/v1/profiles?offering=eq.${enc}&id=neq.${profile.id}&select=*`, { headers }).then((r) => r.json()),
+      fetch(`${base}/rest/v1/profiles?offering_secondary=eq.${enc}&id=neq.${profile.id}&select=*`, { headers }).then((r) => r.json()),
+    ])
+      .then(([primary, secondary]) => {
+        const seen = new Set();
+        const merged = [
+          ...(Array.isArray(primary) ? primary : []),
+          ...(Array.isArray(secondary) ? secondary : []),
+        ].filter((row) => { if (seen.has(row.id)) return false; seen.add(row.id); return true; });
+        setBrowseProfiles(merged.map(transformProfile));
+        setBrowseLoading(false);
+      })
+      .catch(() => setBrowseLoading(false));
+  }, [browseSkill, profile?.id]);
 
   const width = useWindowWidth();
   const isMobile = width < 768;
@@ -776,7 +847,7 @@ export default function BartrApp({ profile, session }) {
           {!isMobile && (
             <div style={{ display: "flex" }}>
               {TABS.filter(tab => tab.label !== "Profile").map((tab, i) => (
-                <button key={tab.label} onClick={() => { setActiveTab(i); if (i === 0) setSecondChance(false); }} style={{
+                <button key={tab.label} onClick={() => { setActiveTab(i); if (i === 1) setSecondChance(false); }} style={{
                   padding: "0 18px", height: HEADER_HEIGHT,
                   background: "transparent", border: "none",
                   borderBottom: activeTab === i ? `2px solid ${C.terracotta}` : "2px solid transparent",
@@ -798,7 +869,7 @@ export default function BartrApp({ profile, session }) {
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {activeTab === 0 && (
+          {activeTab === 1 && (
             <button
               onClick={() => {
                 setPendingFilters({ ...DEFAULT_FILTERS, ...filters, age_max: Math.min(filters.age_max, 60) });
@@ -837,8 +908,136 @@ export default function BartrApp({ profile, session }) {
       {/* Body */}
       <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
 
-        {/* DISCOVER */}
+        {/* BROWSE */}
         {activeTab === 0 && (
+          <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "32px 40px" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto" }}>
+
+              {/* Category grid */}
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 14 }}>BROWSE BY CATEGORY</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {BROWSE_CATEGORIES.map((cat) => {
+                    const active = browseCategory === cat;
+                    return (
+                      <button key={cat} onClick={() => {
+                        setBrowseCategory(cat);
+                        const first = SKILLS.filter((s) => s.category === cat)[0];
+                        setBrowseSkill(first?.label || null);
+                      }} style={{
+                        background: active ? "#FDF0EA" : C.warmWhite,
+                        border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
+                        borderRadius: 14, padding: "14px",
+                        cursor: "pointer", textAlign: "left", minHeight: 80,
+                        fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                      }}>
+                        <div style={{ fontSize: 26, marginBottom: 5 }}>{CATEGORY_EMOJI[cat] || "📌"}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: active ? C.clayDeep : C.bark, lineHeight: 1.3 }}>{cat}</div>
+                        <div style={{ fontSize: 11, color: C.barkLight, marginTop: 3 }}>{browseCounts[cat] ?? 0} people</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Skill chips */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+                  SKILLS IN {browseCategory.toUpperCase()}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {SKILLS.filter((s) => s.category === browseCategory).map((skill) => {
+                    const active = browseSkill === skill.label;
+                    return (
+                      <button key={skill.label} onClick={() => setBrowseSkill(skill.label)} style={{
+                        padding: "8px 14px", borderRadius: 100, minHeight: 36,
+                        background: active ? "#FDF0EA" : C.sand,
+                        border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
+                        color: active ? C.clayDeep : C.bark,
+                        fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                        transition: "all 0.15s",
+                      }}>
+                        {skill.icon} {skill.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* People list */}
+              <div>
+                <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+                  {browseSkill ? `PEOPLE OFFERING ${browseSkill.toUpperCase()}` : "SELECT A SKILL"}
+                </div>
+                {browseLoading ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: C.barkLight, fontSize: 13 }}>Loading...</div>
+                ) : browseProfiles.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: C.barkLight, fontSize: 13 }}>
+                    No one offering this skill yet
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {browseProfiles.map((p) => {
+                      const wantsMyPrimary = YOUR_PROFILE.offering && p.seeking.includes(YOUR_PROFILE.offering);
+                      const wantsMySecondary = YOUR_PROFILE.offeringSecondary && p.seeking.includes(YOUR_PROFILE.offeringSecondary);
+                      const wantedSkill = wantsMyPrimary ? YOUR_PROFILE.offering : wantsMySecondary ? YOUR_PROFILE.offeringSecondary : null;
+                      const bg = avatarBg(p.id);
+                      return (
+                        <div key={p.id} style={{
+                          background: C.warmWhite, border: `1px solid ${C.sandDark}`,
+                          borderRadius: 14, padding: "14px 16px",
+                          display: "flex", alignItems: "center", gap: 12,
+                        }}>
+                          {p.avatarUrl ? (
+                            <img src={p.avatarUrl} style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `2px solid ${C.sandDark}` }} />
+                          ) : (
+                            <div style={{
+                              width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
+                              background: bg, border: `2px solid ${C.sandDark}`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: 16, color: "#fff",
+                            }}>{p.avatar}</div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 15, fontWeight: 600, color: C.bark }}>
+                              {p.name}{p.age ? `, ${p.age}` : ""}
+                            </div>
+                            <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {p.location}</div>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 }}>
+                              {p.swapPreference.map((sp) => (
+                                <span key={sp} style={{
+                                  background: C.sand, border: `1px solid ${C.sandDark}`,
+                                  borderRadius: 100, padding: "3px 10px",
+                                  fontSize: 11, color: C.barkLight,
+                                }}>{sp}</span>
+                              ))}
+                              {wantedSkill && (
+                                <span style={{
+                                  background: "rgba(90,158,111,0.10)", border: "1px solid rgba(90,158,111,0.30)",
+                                  borderRadius: 100, padding: "3px 10px",
+                                  fontSize: 11, color: "#5a9e6f", fontWeight: 600,
+                                }}>Wants: {wantedSkill}</span>
+                              )}
+                            </div>
+                          </div>
+                          <button onClick={() => navigate(`/profile/${p.id}`)} style={{
+                            width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                            background: C.sand, border: `1px solid ${C.sandDark}`,
+                            cursor: "pointer", fontSize: 16, color: C.barkLight,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>→</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DISCOVER */}
+        {activeTab === 1 && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
             {/* Active filter tags row */}
@@ -1069,7 +1268,7 @@ export default function BartrApp({ profile, session }) {
         )}
 
         {/* MATCHES */}
-        {activeTab === 1 && (
+        {activeTab === 2 && (
           <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "40px" }}>
             <div style={{ maxWidth: 680, margin: "0 auto" }}>
               {matches.length === 0 ? (
@@ -1104,9 +1303,9 @@ export default function BartrApp({ profile, session }) {
         }}>
           {TABS.map((tab, i) => (
             <button key={tab.label} onClick={() => {
-              if (i === 2) { navigate(`/profile/${profile.id}`); return; }
+              if (i === 3) { navigate(`/profile/${profile.id}`); return; }
               setActiveTab(i);
-              if (i === 0) setSecondChance(false);
+              if (i === 1) setSecondChance(false);
             }} style={{
               flex: 1, padding: "8px 0", background: "transparent", border: "none",
               color: activeTab === i ? C.terracotta : C.barkLight,
