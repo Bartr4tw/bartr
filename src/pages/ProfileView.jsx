@@ -24,6 +24,8 @@ export default function ProfileView() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isSelf, setIsSelf] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -395,6 +397,77 @@ export default function ProfileView() {
         )}
       </div>
 
+      {/* Delete account confirmation modal */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(74,55,40,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "0 24px",
+        }}>
+          <div style={{
+            background: C.warmWhite, borderRadius: 20, padding: "32px 24px",
+            maxWidth: 360, width: "100%",
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 600, color: C.bark, marginBottom: 10 }}>
+              Delete account?
+            </div>
+            <div style={{ fontSize: 15, color: C.barkLight, lineHeight: 1.5, marginBottom: 28 }}>
+              This will permanently delete your profile, matches, and messages. This cannot be undone.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                style={{
+                  flex: 1, padding: "14px", minHeight: 50,
+                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                  borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Cancel</button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    const headers = await getAuthHeaders();
+                    await Promise.all([
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?sender_id=eq.${userId}`, { method: "DELETE", headers }),
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?receiver_id=eq.${userId}`, { method: "DELETE", headers }),
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${userId}`, { method: "DELETE", headers }),
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiped_id=eq.${userId}`, { method: "DELETE", headers }),
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${userId}`, { method: "DELETE", headers }),
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_b=eq.${userId}`, { method: "DELETE", headers }),
+                      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=eq.${userId}`, { method: "DELETE", headers }),
+                    ]);
+                    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, { method: "DELETE", headers });
+                    // Delete the auth user via Edge Function (requires service role key, safe server-side)
+                    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+                      method: "POST",
+                      headers,
+                    });
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
+                  } catch {
+                    setDeleting(false);
+                    setShowDeleteConfirm(false);
+                  }
+                }}
+                disabled={deleting}
+                style={{
+                  flex: 1, padding: "14px", minHeight: 50,
+                  background: "#c0392b", border: "none",
+                  borderRadius: 100, color: "#fff", fontSize: 15, fontWeight: 500,
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', sans-serif", opacity: deleting ? 0.6 : 1,
+                }}
+              >{deleting ? "Deleting..." : "Delete"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sticky bottom CTA */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
@@ -427,6 +500,16 @@ export default function ProfileView() {
                 cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
               }}
             >Sign Out</button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              style={{
+                width: 50, height: 50, flexShrink: 0,
+                background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                borderRadius: 100, color: C.barkLight, fontSize: 18,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+              title="Delete account"
+            >🗑️</button>
           </>
         ) : (
           <>

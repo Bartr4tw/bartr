@@ -377,27 +377,6 @@ export default function BartrLanding() {
       </section>
 
       {/* Stats strip */}
-      <div style={{
-        background: C.sand,
-        borderTop: `1px solid ${C.sandDark}`,
-        borderBottom: `1px solid ${C.sandDark}`,
-        padding: isMobile ? "24px 20px" : "28px 64px",
-        display: "flex", justifyContent: "center",
-        flexWrap: "wrap",
-        gap: isMobile ? "1.5rem 3rem" : "6rem",
-      }}>
-        {[
-          { num: "4,200+", label: "Skills listed" },
-          { num: "1,800+", label: "Active traders" },
-          { num: "92%",    label: "Match satisfaction" },
-        ].map(({ num, label }) => (
-          <div key={label} style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 26 : 32, fontWeight: 600, color: C.clayDeep }}>{num}</div>
-            <div style={{ fontSize: 13, color: C.barkLight, marginTop: 2 }}>{label}</div>
-          </div>
-        ))}
-      </div>
-
       {/* How it works */}
       <section id="how" style={{ padding: `${sectionPadV} ${sectionPadH}`, maxWidth: 1000, margin: "0 auto" }}>
         <div ref={howRef} style={{
