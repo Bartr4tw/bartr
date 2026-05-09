@@ -291,8 +291,7 @@ export default function BartrLanding() {
               opacity: heroVisible ? 1 : 0,
               transition: "opacity 0.8s ease 0.3s",
             }}>
-              Bartr connects people who have skills to share with people hungry to learn them.
-              No money. No algorithms. Just humans teaching humans.
+              The human connection is dying. People in this city have infinite skills but zero conversations. Bartr opens the door. The rest is up to you.
             </p>
 
             {/* CTA */}
