@@ -964,7 +964,7 @@ export default function BartrApp({ profile, session }) {
                   SKILLS IN {browseCategory.toUpperCase()}
                 </div>
                 <div className="browse-chips" style={{ display: "flex", flexWrap: "nowrap", overflowX: "scroll", gap: 8, scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                  {SKILLS.filter((s) => s.category === browseCategory).map((skill) => {
+                  {SKILLS.filter((s) => s.category === browseCategory).sort((a, b) => (browseSkillCounts[b.label] ?? 0) - (browseSkillCounts[a.label] ?? 0)).map((skill) => {
                     const active = browseSkill === skill.label;
                     return (
                       <button key={skill.label} onClick={() => setBrowseSkill(skill.label)} style={{
