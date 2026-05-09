@@ -476,20 +476,8 @@ export default function BartrLanding() {
           transition: "all 0.8s ease",
         }}>
           <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 24, textTransform: "uppercase" }}>Why Bartr exists</div>
-          <p style={{
-            fontFamily: "'Fraunces', serif",
-            fontSize: "clamp(20px, 3.5vw, 34px)",
-            fontWeight: 600, lineHeight: 1.4, color: C.bark,
-            marginBottom: 32,
-          }}>
-            "In a world questioning what humans are capable of, we believe the answer is{" "}
-            <em style={{ color: C.terracotta, fontStyle: "italic" }}>everything</em>. Skills aren't dying.
-            They're waiting to be shared."
-          </p>
-          <div style={{ width: 40, height: 2, background: C.clay, marginBottom: 32 }} />
-          <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 520 }}>
-            Bartr is built on the belief that every person has something worth teaching,
-            and something worth learning. We're not replacing human skill, we're celebrating it.
+          <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 560 }}>
+            Somewhere along the way, we stopped talking to our neighbors. We stopped sharing what we know. We outsourced connection to social media algorithms and wonder why we feel alone. That's why we created Bartr - to reinstate what it means to be human by establishing connection through learning, teaching, and creating.
           </p>
         </div>
       </section>
