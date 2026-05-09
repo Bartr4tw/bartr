@@ -274,19 +274,16 @@ export default function BartrLanding() {
                 fontWeight: 600, letterSpacing: -1.5, lineHeight: 1.08,
                 fontSize: isMobile ? "clamp(34px, 9vw, 48px)" : "clamp(40px, 6vw, 80px)",
                 color: C.bark,
-              }}>The human connection is{" "}
-                <span style={{ color: C.terracotta }}>dying.</span>
-              </span>
+              }}>Teach what you know.</span>
+              <span style={{
+                display: "block",
+                fontFamily: "'Fraunces', serif",
+                fontWeight: 600, letterSpacing: -1.5, lineHeight: 1.08,
+                fontSize: isMobile ? "clamp(34px, 9vw, 48px)" : "clamp(40px, 6vw, 80px)",
+                color: C.terracotta, fontStyle: "italic",
+                marginLeft: isMobile ? "1.5ch" : "2.6ch",
+              }}>Learn what you don't.</span>
             </h1>
-
-            <p style={{
-              fontSize: isMobile ? 15 : 16, color: C.barkLight, lineHeight: 1.7,
-              maxWidth: 420, marginBottom: isMobile ? 12 : 16,
-              opacity: heroVisible ? 1 : 0,
-              transition: "opacity 0.8s ease 0.3s",
-            }}>
-              People in this city have infinite skills but zero conversations.
-            </p>
 
             <p style={{
               fontSize: isMobile ? 15 : 16, color: C.barkLight, lineHeight: 1.7,
@@ -294,7 +291,8 @@ export default function BartrLanding() {
               opacity: heroVisible ? 1 : 0,
               transition: "opacity 0.8s ease 0.3s",
             }}>
-              Bartr opens the door. The rest is up to you.
+              Bartr connects people who have skills to share with people hungry to learn them.
+              No money. No algorithms. Just humans teaching humans.
             </p>
 
             {/* CTA */}
