@@ -837,6 +837,7 @@ export default function BartrApp({ profile, session }) {
         .age-slider::-webkit-slider-thumb { -webkit-appearance:none; pointer-events:all; width:20px; height:20px; border-radius:50%; background:#D4714A; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(74,55,40,0.2); }
         .age-slider::-moz-range-thumb { pointer-events:all; width:20px; height:20px; border-radius:50%; background:#D4714A; cursor:pointer; border:2px solid #fff; }
         .browse-cats::-webkit-scrollbar { display: none; }
+        .browse-chips::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* Header */}
@@ -927,11 +928,12 @@ export default function BartrApp({ profile, session }) {
                 <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 14 }}>BROWSE BY CATEGORY</div>
                 <div className="browse-cats" style={{
                   display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
-                  height: 212, overflowY: "scroll",
+                  height: (90 * 2) + 10, overflowY: "scroll",
                   scrollbarWidth: "none", msOverflowStyle: "none",
                 }}>
                   {BROWSE_CATEGORIES.map((cat) => {
                     const active = browseCategory === cat;
+                    const count = browseCounts[cat] ?? 0;
                     return (
                       <button key={cat} onClick={() => {
                         setBrowseCategory(cat);
@@ -941,12 +943,15 @@ export default function BartrApp({ profile, session }) {
                         background: active ? "#FDF0EA" : C.warmWhite,
                         border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
                         borderRadius: 14, padding: "14px",
-                        cursor: "pointer", textAlign: "left", minHeight: 80,
+                        cursor: "pointer", textAlign: "left", minHeight: 90,
                         fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        display: "flex", flexDirection: "column", justifyContent: "space-between",
                       }}>
-                        <div style={{ fontSize: 26, marginBottom: 5 }}>{CATEGORY_EMOJI[cat] || "📌"}</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: active ? C.clayDeep : C.bark, lineHeight: 1.3 }}>{cat}</div>
-                        <div style={{ fontSize: 11, color: C.barkLight, marginTop: 3 }}>{browseCounts[cat] ?? 0} people</div>
+                        <span style={{ fontSize: 26, fontFamily: "Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif" }}>{CATEGORY_EMOJI[cat] || "📌"}</span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: active ? C.clayDeep : C.bark, lineHeight: 1.3 }}>{cat}</div>
+                          <div style={{ fontSize: 11, color: C.barkLight, marginTop: 3 }}>{count} {count === 1 ? "person" : "people"}</div>
+                        </div>
                       </button>
                     );
                   })}
@@ -958,7 +963,7 @@ export default function BartrApp({ profile, session }) {
                 <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
                   SKILLS IN {browseCategory.toUpperCase()}
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <div className="browse-chips" style={{ display: "flex", flexWrap: "nowrap", overflowX: "scroll", gap: 8, scrollbarWidth: "none", msOverflowStyle: "none" }}>
                   {SKILLS.filter((s) => s.category === browseCategory).map((skill) => {
                     const active = browseSkill === skill.label;
                     return (
