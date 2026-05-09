@@ -275,7 +275,7 @@ export default function BartrLanding() {
                 fontSize: isMobile ? "clamp(34px, 9vw, 48px)" : "clamp(40px, 6vw, 80px)",
                 color: C.bark,
               }}>The human connection is{" "}
-                <span style={{ color: C.terracotta, fontStyle: "italic" }}>dying.</span>
+                <span style={{ color: C.terracotta }}>dying.</span>
               </span>
             </h1>
 
