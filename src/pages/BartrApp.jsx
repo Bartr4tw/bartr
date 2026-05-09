@@ -918,7 +918,7 @@ export default function BartrApp({ profile, session }) {
 
         {/* BROWSE */}
         {activeTab === 0 && (
-          <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "32px 40px" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "32px 40px", background: C.cream }}>
             <div style={{ maxWidth: 680, margin: "0 auto" }}>
 
               {/* Category grid */}
@@ -1021,9 +1021,9 @@ export default function BartrApp({ profile, session }) {
                               ))}
                               {wantedSkill && (
                                 <span style={{
-                                  background: "rgba(90,158,111,0.10)", border: "1px solid rgba(90,158,111,0.30)",
+                                  background: "#5a9e6f",
                                   borderRadius: 100, padding: "3px 10px",
-                                  fontSize: 11, color: "#5a9e6f", fontWeight: 600,
+                                  fontSize: 11, color: "#fff", fontWeight: 600,
                                 }}>Wants: {wantedSkill}</span>
                               )}
                             </div>
