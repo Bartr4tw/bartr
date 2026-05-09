@@ -291,7 +291,7 @@ export default function BartrLanding() {
               opacity: heroVisible ? 1 : 0,
               transition: "opacity 0.8s ease 0.3s",
             }}>
-              The human connection is dying. People in this city have infinite skills but zero conversations. Bartr opens the door. The rest is up to you.
+              The human connection is dying. People in this city have infinite skills, but zero conversations. Bartr opens the door. The rest is up to you.
             </p>
 
             {/* CTA */}
