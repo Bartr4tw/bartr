@@ -115,6 +115,7 @@ export default function Auth() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [legalModal, setLegalModal] = useState(null);
+  const [inviteCode, setInviteCode] = useState("");
 
   const handleSubmit = async () => {
     setError("");
@@ -122,6 +123,7 @@ export default function Auth() {
 
     if (mode === "signup") {
       if (!fullName) { setError("Please enter your name."); return; }
+      if (!inviteCode.trim()) { setError("Please enter your invite code."); return; }
       if (password !== confirmPassword) { setError("Passwords don't match."); return; }
       if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     }
@@ -129,13 +131,40 @@ export default function Auth() {
     setLoading(true);
 
     if (mode === "signup") {
+      // Validate invite code
+      const codeRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/invite_codes?code=ilike.${encodeURIComponent(inviteCode.trim())}&used=eq.false`,
+        { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } }
+      );
+      const codeRows = await codeRes.json();
+      if (!Array.isArray(codeRows) || codeRows.length === 0) {
+        setError("That code isn't valid or has already been used.");
+        setLoading(false);
+        return;
+      }
+      const matchedCode = codeRows[0].code;
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } }
       });
-      if (error) setError(error.message);
-      else setMessage("Check your email for a confirmation link!");
+      if (error) { setError(error.message); setLoading(false); return; }
+
+      // Mark code as used
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/invite_codes?code=eq.${encodeURIComponent(matchedCode)}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({ used: true }),
+        }
+      );
+      setMessage("Check your email for a confirmation link!");
     } else if (mode === "forgot") {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -240,6 +269,15 @@ export default function Auth() {
               <label style={labelStyle}>Full name</label>
               <input type="text" placeholder="Your name" value={fullName}
                 onChange={e => setFullName(e.target.value)} style={inputStyle} />
+            </div>
+          )}
+
+          {/* Invite code */}
+          {mode === "signup" && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Invite code</label>
+              <input type="text" placeholder="Enter your code" value={inviteCode}
+                onChange={e => setInviteCode(e.target.value)} style={inputStyle} />
             </div>
           )}
 
