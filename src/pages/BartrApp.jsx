@@ -836,6 +836,7 @@ export default function BartrApp({ profile, session }) {
         .age-slider { -webkit-appearance:none; appearance:none; position:absolute; left:0; top:-7px; width:100%; height:20px; background:transparent; pointer-events:none; outline:none; }
         .age-slider::-webkit-slider-thumb { -webkit-appearance:none; pointer-events:all; width:20px; height:20px; border-radius:50%; background:#D4714A; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(74,55,40,0.2); }
         .age-slider::-moz-range-thumb { pointer-events:all; width:20px; height:20px; border-radius:50%; background:#D4714A; cursor:pointer; border:2px solid #fff; }
+        .browse-cats::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* Header */}
@@ -924,7 +925,11 @@ export default function BartrApp({ profile, session }) {
               {/* Category grid */}
               <div style={{ marginBottom: 28 }}>
                 <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 14 }}>BROWSE BY CATEGORY</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="browse-cats" style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
+                  height: 212, overflowY: "scroll",
+                  scrollbarWidth: "none", msOverflowStyle: "none",
+                }}>
                   {BROWSE_CATEGORIES.map((cat) => {
                     const active = browseCategory === cat;
                     return (
