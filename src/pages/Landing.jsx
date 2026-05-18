@@ -477,7 +477,7 @@ export default function BartrLanding() {
         }}>
           <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 24, textTransform: "uppercase" }}>Why Bartr exists</div>
           <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 560 }}>
-            Somewhere along the way, we stopped talking to our neighbors. We stopped sharing what we know. We outsourced connection to social media algorithms and wonder why we feel alone. That's why we created Bartr, to reinstate what it means to be human by establishing connection through learning, teaching, and creating.
+            Somewhere along the way, we stopped talking to our neighbors. We stopped sharing what we know. We outsourced connection to social media algorithms and wonder why we feel alone. That's why we created Bartr, to encourage humans to once again be human.
           </p>
         </div>
       </section>
