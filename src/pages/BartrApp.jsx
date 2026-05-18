@@ -1262,7 +1262,10 @@ export default function BartrApp({ profile, session }) {
                       <SwipeCard
                         profile={profiles[0]}
                         yourProfile={YOUR_PROFILE}
-                        onSwipe={(dir) => { if (dir === "left") handlePass(); }}
+                        onSwipe={(dir) => {
+                          if (dir === "left") handlePass();
+                          else if (dir === "right") { setRequestTarget(profiles[0]); setShowRequestModal(true); }
+                        }}
                         isMobile={isMobile}
                         onTradeRespond={(tr) => {
                           const msg = encodeURIComponent(
