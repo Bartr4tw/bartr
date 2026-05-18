@@ -484,12 +484,12 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
   );
 }
 
-function MatchCard({ profile, yourProfile, lastMessage, myId, visited }) {
+function MatchCard({ profile, yourProfile, lastMessage, myId, visited, onRead }) {
   const navigate = useNavigate();
   const isUnread = lastMessage && lastMessage.sender_id !== myId && !visited;
   return (
     <div
-      onClick={() => navigate(`/chat/${profile.id}`)}
+      onClick={() => { onRead(profile.id); navigate(`/chat/${profile.id}`); }}
       style={{
         background: C.warmWhite, borderRadius: 16, padding: "16px",
         border: `1.5px solid ${isUnread ? C.terracotta : C.sandDark}`,
@@ -555,7 +555,20 @@ export default function BartrApp({ profile, session }) {
   };
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(location.state?.tab ?? 0);
-  const readConversations = useRef(new Set(location.state?.visited ? [location.state.visited] : []));
+  const readConversations = useRef(null);
+  if (!readConversations.current) {
+    let stored = [];
+    try { stored = JSON.parse(localStorage.getItem(`bartr_read_${profile.id}`) || '[]'); } catch {}
+    readConversations.current = new Set(stored);
+    if (location.state?.visited) {
+      readConversations.current.add(location.state.visited);
+      try { localStorage.setItem(`bartr_read_${profile.id}`, JSON.stringify(Array.from(readConversations.current))); } catch {}
+    }
+  }
+  const markRead = (userId) => {
+    readConversations.current.add(userId);
+    try { localStorage.setItem(`bartr_read_${profile.id}`, JSON.stringify(Array.from(readConversations.current))); } catch {}
+  };
   const [profiles, setProfiles] = useState([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [matches, setMatches] = useState([]);
@@ -915,6 +928,7 @@ export default function BartrApp({ profile, session }) {
     });
     setIncomingRequests((prev) => prev.filter((r) => r.id !== req.id));
     if (req.senderProfile) setMatches((prev) => [transformProfile(req.senderProfile), ...prev]);
+    markRead(req.sender_id);
     navigate(`/chat/${req.sender_id}`);
   };
 
@@ -1501,7 +1515,7 @@ export default function BartrApp({ profile, session }) {
                     {matches.length} MATCH{matches.length !== 1 ? "ES" : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} lastMessage={lastMessages[m.id] || null} myId={profile.id} visited={readConversations.current.has(m.id)} />)}
+                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} lastMessage={lastMessages[m.id] || null} myId={profile.id} visited={readConversations.current.has(m.id)} onRead={markRead} />)}
                   </div>
                 </>
               ) : null}
