@@ -584,7 +584,7 @@ export default function BartrApp({ profile, session }) {
   const [browseCategory, setBrowseCategory] = useState(BROWSE_CATEGORIES[0]);
   const [browseSkill, setBrowseSkill] = useState(
     () => SKILLS.filter((s) => s.category === BROWSE_CATEGORIES[0])[0]?.label || null
-  );
+  ); // updated to most-popular on first counts load
   const [browseProfiles, setBrowseProfiles] = useState([]);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseCounts, setBrowseCounts] = useState({});
@@ -733,6 +733,10 @@ export default function BartrApp({ profile, session }) {
           });
           setBrowseCounts(counts);
           setBrowseSkillCounts(skillCounts);
+          // Auto-select most popular skill in the initial category
+          const initSkills = SKILLS.filter((s) => s.category === BROWSE_CATEGORIES[0]);
+          const topInit = initSkills.sort((a, b) => (skillCounts[b.label] ?? 0) - (skillCounts[a.label] ?? 0))[0];
+          if (topInit) setBrowseSkill(topInit.label);
         })
         .catch(() => {});
     });
@@ -1068,8 +1072,9 @@ export default function BartrApp({ profile, session }) {
                     return (
                       <button key={cat} onClick={() => {
                         setBrowseCategory(cat);
-                        const first = SKILLS.filter((s) => s.category === cat)[0];
-                        setBrowseSkill(first?.label || null);
+                        const catSkills = SKILLS.filter((s) => s.category === cat);
+                        const top = catSkills.sort((a, b) => (browseSkillCounts[b.label] ?? 0) - (browseSkillCounts[a.label] ?? 0))[0];
+                        setBrowseSkill(top?.label || null);
                       }} style={{
                         background: active ? "#FDF0EA" : C.warmWhite,
                         border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
