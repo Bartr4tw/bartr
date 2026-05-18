@@ -484,9 +484,9 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
   );
 }
 
-function MatchCard({ profile, yourProfile, lastMessage, myId }) {
+function MatchCard({ profile, yourProfile, lastMessage, myId, visited }) {
   const navigate = useNavigate();
-  const isUnread = lastMessage && lastMessage.sender_id !== myId;
+  const isUnread = lastMessage && lastMessage.sender_id !== myId && !visited;
   return (
     <div
       onClick={() => navigate(`/chat/${profile.id}`)}
@@ -555,6 +555,7 @@ export default function BartrApp({ profile, session }) {
   };
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(location.state?.tab ?? 0);
+  const readConversations = useRef(new Set(location.state?.visited ? [location.state.visited] : []));
   const [profiles, setProfiles] = useState([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [matches, setMatches] = useState([]);
@@ -1500,7 +1501,7 @@ export default function BartrApp({ profile, session }) {
                     {matches.length} MATCH{matches.length !== 1 ? "ES" : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} lastMessage={lastMessages[m.id] || null} myId={profile.id} />)}
+                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} lastMessage={lastMessages[m.id] || null} myId={profile.id} visited={readConversations.current.has(m.id)} />)}
                   </div>
                 </>
               ) : null}
