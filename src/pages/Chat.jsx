@@ -163,7 +163,7 @@ export default function Chat() {
         display: "flex", alignItems: "center", gap: 16, padding: "0 20px",
       }}>
         <button
-          onClick={() => navigate("/app")}
+          onClick={() => navigate("/app", { state: { tab: 2 } })}
           style={{
             background: "transparent", border: "none",
             color: C.barkLight, fontSize: 20, cursor: "pointer",

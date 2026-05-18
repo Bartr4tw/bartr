@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getAuthHeaders } from "../lib/supabase.js";
 import { SKILLS, CATEGORIES, getBorough } from "../lib/skillsData.js";
 
@@ -553,7 +553,8 @@ export default function BartrApp({ profile, session }) {
     seeking: seekingLabels,
     seekingIcons: seekingLabels.map((s) => SKILLS.find((sk) => sk.label === s)?.icon || "✨"),
   };
-  const [activeTab, setActiveTab] = useState(0);
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab ?? 0);
   const [profiles, setProfiles] = useState([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [matches, setMatches] = useState([]);
