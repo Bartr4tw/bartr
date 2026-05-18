@@ -595,22 +595,34 @@ export default function BartrApp({ profile, session }) {
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseCounts, setBrowseCounts] = useState({});
   const [browseSkillCounts, setBrowseSkillCounts] = useState({});
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestTarget, setRequestTarget] = useState(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestError, setRequestError] = useState("");
 
-  // Fetch profiles excluding anyone already swiped on or matched with
+  // Fetch profiles excluding anyone already swiped on, matched, or with a pending request
   useEffect(() => {
     if (!profile?.id) return;
     Promise.all([
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&select=swiped_id`, { headers: authHeaders }).then((r) => r.json()),
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${profile.id}&select=user_b`, { headers: authHeaders }).then((r) => r.json()),
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_b=eq.${profile.id}&select=user_a`, { headers: authHeaders }).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${profile.id}&status=eq.pending&select=receiver_id`, { headers: authHeaders }).then((r) => r.json()),
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?receiver_id=eq.${profile.id}&status=eq.pending&select=sender_id`, { headers: authHeaders }).then((r) => r.json()),
     ])
-      .then(async ([swipes, matchesAsA, matchesAsB]) => {
+      .then(async ([swipes, matchesAsA, matchesAsB, outgoingReqs, incomingReqs]) => {
         const swipedIds = (Array.isArray(swipes) ? swipes : []).map((s) => s.swiped_id);
         const matchedIds = [
           ...(Array.isArray(matchesAsA) ? matchesAsA : []).map((m) => m.user_b),
           ...(Array.isArray(matchesAsB) ? matchesAsB : []).map((m) => m.user_a),
         ];
-        const excludeIds = [...new Set([...swipedIds, ...matchedIds])];
+        const requestedIds = [
+          ...(Array.isArray(outgoingReqs) ? outgoingReqs : []).map((r) => r.receiver_id),
+          ...(Array.isArray(incomingReqs) ? incomingReqs : []).map((r) => r.sender_id),
+        ];
+        const excludeIds = [...new Set([...swipedIds, ...matchedIds, ...requestedIds])];
 
         let url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=neq.${profile.id}&select=*`;
         if (excludeIds.length > 0) {
@@ -659,7 +671,34 @@ export default function BartrApp({ profile, session }) {
     });
   }, [profile?.id]);
 
-  // Refresh last messages whenever the Matches tab is opened
+  // Fetch incoming pending connection requests
+  const fetchIncomingRequests = async () => {
+    const headers = await getAuthHeaders();
+    const rows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?receiver_id=eq.${profile.id}&status=eq.pending&order=created_at.desc`,
+      { headers }
+    ).then((r) => r.json());
+    if (!Array.isArray(rows) || !rows.length) { setIncomingRequests([]); return; }
+    const senderIds = rows.map((r) => r.sender_id);
+    const profileRows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=in.(${senderIds.join(",")})&select=*`,
+      { headers }
+    ).then((r) => r.json());
+    const profileMap = {};
+    (Array.isArray(profileRows) ? profileRows : []).forEach((p) => { profileMap[p.id] = p; });
+    setIncomingRequests(rows.map((r) => ({ ...r, senderProfile: profileMap[r.sender_id] || null })));
+  };
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    fetchIncomingRequests();
+  }, [profile?.id]);
+
+  // Refresh incoming requests + last messages whenever the Matches tab is opened
+  useEffect(() => {
+    if (activeTab === 2 && profile?.id) fetchIncomingRequests();
+  }, [activeTab]);
+
   useEffect(() => {
     if (activeTab !== 2 || !profile?.id || !matches.length) return;
     const msgs = {};
@@ -780,59 +819,112 @@ export default function BartrApp({ profile, session }) {
     setSecondChanceLoading(false);
   };
 
-  const handleSwipe = async (direction) => {
+  // Pass (left swipe only) — no match logic; matches happen via connection requests
+  const handlePass = async () => {
     const current = profiles[0];
     if (!current) return;
-
-    // Update UI immediately
     sessionSwipedIds.current.add(current.id);
-    setLastAction(direction);
+    setLastAction("left");
     setProfiles((p) => p.slice(1));
     setTimeout(() => setLastAction(null), 400);
-
     if (secondChance) {
-      // Update existing swipe record instead of inserting (unique constraint on swiper+swiped)
-      await fetch(
+      fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${profile.id}&swiped_id=eq.${current.id}`,
-        {
-          method: "PATCH",
-          keepalive: true,
-          headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ direction }),
-        }
+        { method: "PATCH", keepalive: true, headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ direction: "left" }) }
       );
     } else {
-      // Record swipe in DB (keepalive ensures it completes even if page navigates away)
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
-        method: "POST",
-        keepalive: true,
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
+        method: "POST", keepalive: true,
         headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ swiper_id: profile.id, swiped_id: current.id, direction }),
+        body: JSON.stringify({ swiper_id: profile.id, swiped_id: current.id, direction: "left" }),
       });
     }
+  };
 
-    if (direction === "right") {
-      // Check if other user already swiped right on current user
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${current.id}&swiped_id=eq.${profile.id}&direction=eq.right`,
-        { headers: authHeaders }
-      );
-      const rows = await res.json();
-
-      if (Array.isArray(rows) && rows.length > 0) {
-        // Mutual match — save to matches table
-        const user_a = profile.id < current.id ? profile.id : current.id;
-        const user_b = profile.id < current.id ? current.id : profile.id;
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
-          method: "POST",
-          headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ user_a, user_b }),
-        });
-        setMatches((m) => [current, ...m]);
-        setShowMatch(current);
-        setTimeout(() => setShowMatch(null), 2400);
-      }
+  const handleSendRequest = async () => {
+    if (!requestMessage.trim() || !requestTarget) return;
+    setRequestLoading(true);
+    setRequestError("");
+    const headers = await getAuthHeaders();
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Rate limit check
+    const rateRows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${profile.id}&status=eq.pending&created_at=gt.${since}&select=id`,
+      { headers }
+    ).then((r) => r.json());
+    if (Array.isArray(rateRows) && rateRows.length >= 5) {
+      setRequestError("You've reached your 5 daily requests. Try again tomorrow.");
+      setRequestLoading(false);
+      return;
     }
+    // Check for mutual request (auto-match)
+    const theirRows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${requestTarget.id}&receiver_id=eq.${profile.id}&status=eq.pending`,
+      { headers }
+    ).then((r) => r.json());
+    const isMutual = Array.isArray(theirRows) && theirRows.length > 0;
+    // POST the new request
+    const postRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ sender_id: profile.id, receiver_id: requestTarget.id, message: requestMessage.trim() }),
+    });
+    if (!postRes.ok) {
+      setRequestError("Something went wrong. Please try again.");
+      setRequestLoading(false);
+      return;
+    }
+    // Remove from queue either way
+    sessionSwipedIds.current.add(requestTarget.id);
+    setProfiles((p) => p.filter((pr) => pr.id !== requestTarget.id));
+    setShowRequestModal(false);
+    setRequestMessage("");
+    setRequestError("");
+    setRequestLoading(false);
+    if (isMutual) {
+      // Accept their pending request, create match
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?id=eq.${theirRows[0].id}`,
+        { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "accepted" }) }
+      );
+      const user_a = profile.id < requestTarget.id ? profile.id : requestTarget.id;
+      const user_b = profile.id < requestTarget.id ? requestTarget.id : profile.id;
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+        body: JSON.stringify({ user_a, user_b }),
+      });
+      setMatches((m) => [requestTarget, ...m]);
+      setShowMatch(requestTarget);
+      setTimeout(() => setShowMatch(null), 2400);
+    }
+  };
+
+  const handleAcceptRequest = async (req) => {
+    const headers = await getAuthHeaders();
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?id=eq.${req.id}`,
+      { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "accepted" }) }
+    );
+    const user_a = profile.id < req.sender_id ? profile.id : req.sender_id;
+    const user_b = profile.id < req.sender_id ? req.sender_id : profile.id;
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({ user_a, user_b }),
+    });
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== req.id));
+    if (req.senderProfile) setMatches((prev) => [transformProfile(req.senderProfile), ...prev]);
+    navigate(`/chat/${req.sender_id}`);
+  };
+
+  const handleDeclineRequest = async (req) => {
+    const headers = await getAuthHeaders();
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?id=eq.${req.id}`,
+      { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "declined" }) }
+    );
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== req.id));
   };
 
   const handleApplyFilters = async () => {
@@ -911,12 +1003,12 @@ export default function BartrApp({ profile, session }) {
                   display: "flex", alignItems: "center", gap: 6,
                 }}>
                   {tab.icon} {tab.label}
-                  {tab.label === "Matches" && matches.length > 0 && (
+                  {tab.label === "Matches" && (matches.length + incomingRequests.length) > 0 && (
                     <span style={{
                       background: C.terracotta, borderRadius: "50%", width: 17, height: 17,
                       display: "inline-flex", alignItems: "center", justifyContent: "center",
                       fontSize: 9, color: C.warmWhite, fontWeight: 700,
-                    }}>{matches.length}</span>
+                    }}>{matches.length + incomingRequests.length}</span>
                   )}
                 </button>
               ))}
@@ -1170,7 +1262,7 @@ export default function BartrApp({ profile, session }) {
                       <SwipeCard
                         profile={profiles[0]}
                         yourProfile={YOUR_PROFILE}
-                        onSwipe={handleSwipe}
+                        onSwipe={(dir) => { if (dir === "left") handlePass(); }}
                         isMobile={isMobile}
                         onTradeRespond={(tr) => {
                           const msg = encodeURIComponent(
@@ -1183,16 +1275,16 @@ export default function BartrApp({ profile, session }) {
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 48 }}>
-                    <button onClick={() => handleSwipe("left")} style={{
+                    <button onClick={handlePass} style={{
                       width: 58, height: 58, borderRadius: "50%",
                       background: lastAction === "left" ? C.sandDark : C.sand,
                       border: `1px solid ${C.sandDark}`,
                       fontSize: 22, cursor: "pointer", transition: "all 0.2s",
                       display: "flex", alignItems: "center", justifyContent: "center", color: C.barkLight,
                     }}>✕</button>
-                    <button onClick={() => handleSwipe("right")} style={{
+                    <button onClick={() => { setRequestTarget(profiles[0]); setShowRequestModal(true); }} style={{
                       width: 68, height: 68, borderRadius: "50%",
-                      background: lastAction === "right" ? `rgba(212,113,74,0.20)` : `rgba(212,113,74,0.10)`,
+                      background: `rgba(212,113,74,0.10)`,
                       border: `2px solid rgba(212,113,74,0.45)`,
                       fontSize: 26, cursor: "pointer", transition: "all 0.2s",
                       display: "flex", alignItems: "center", justifyContent: "center",
@@ -1200,7 +1292,7 @@ export default function BartrApp({ profile, session }) {
                     }}>🤝</button>
                   </div>
                   <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: C.barkLight, letterSpacing: 0.5 }}>
-                    SWIPE OR TAP · ✕ SKIP · 🤝 CONNECT
+                    SWIPE LEFT TO PASS · 🤝 TO REQUEST
                   </div>
                 </>
               ) : (
@@ -1334,22 +1426,81 @@ export default function BartrApp({ profile, session }) {
         {activeTab === 2 && (
           <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "40px" }}>
             <div style={{ maxWidth: 680, margin: "0 auto" }}>
-              {matches.length === 0 ? (
-                <div style={{ textAlign: "center", paddingTop: 80 }}>
-                  <div style={{ fontSize: 44, marginBottom: 14 }}>⚡</div>
-                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 400, color: C.bark, marginBottom: 8 }}>No matches yet</div>
-                  <div style={{ color: C.barkLight, fontSize: 13 }}>Start discovering skill partners</div>
+
+              {/* Incoming requests inbox */}
+              {incomingRequests.length > 0 && (
+                <div style={{ marginBottom: 32 }}>
+                  <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 14 }}>
+                    REQUESTS ({incomingRequests.length})
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {incomingRequests.map((req) => {
+                      const sp = req.senderProfile;
+                      const initials = sp?.full_name ? sp.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+                      return (
+                        <div key={req.id} style={{
+                          background: C.warmWhite, borderRadius: 16, padding: 16,
+                          border: `1.5px solid ${C.terracotta}`,
+                          boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                            <Avatar url={sp?.avatar_url || null} initials={initials} size={44} fontSize={14} border={`1.5px solid ${C.sandDark}`} />
+                            <div>
+                              <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, color: C.bark, fontSize: 15 }}>
+                                {sp?.full_name || "Someone"}
+                              </div>
+                              <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>
+                                {sp?.offering_icon} {sp?.offering}
+                              </div>
+                            </div>
+                          </div>
+                          <p style={{ fontSize: 13, color: C.bark, lineHeight: 1.6, margin: "0 0 14px", fontStyle: "italic" }}>
+                            "{req.message}"
+                          </p>
+                          <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                              onClick={() => handleDeclineRequest(req)}
+                              style={{
+                                flex: 1, padding: "11px", minHeight: 44, borderRadius: 100,
+                                background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                                color: C.barkLight, fontSize: 13, fontWeight: 500,
+                                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                              }}
+                            >Decline</button>
+                            <button
+                              onClick={() => handleAcceptRequest(req)}
+                              style={{
+                                flex: 2, padding: "11px", minHeight: 44, borderRadius: 100,
+                                background: C.terracotta, border: "none",
+                                color: C.cream, fontSize: 13, fontWeight: 500,
+                                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                              }}
+                            >Accept 🤝</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Matches list */}
+              {matches.length === 0 && incomingRequests.length === 0 ? (
+                <div style={{ textAlign: "center", paddingTop: 80 }}>
+                  <div style={{ fontSize: 44, marginBottom: 14 }}>🤝</div>
+                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 400, color: C.bark, marginBottom: 8 }}>No matches yet</div>
+                  <div style={{ color: C.barkLight, fontSize: 13 }}>Send a connection request to get started</div>
+                </div>
+              ) : matches.length > 0 ? (
                 <>
                   <div style={{ fontSize: 11, color: C.barkLight, marginBottom: 16, letterSpacing: 0.5 }}>
-                    {matches.length} MUTUAL MATCH{matches.length !== 1 ? "ES" : ""}
+                    {matches.length} MATCH{matches.length !== 1 ? "ES" : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} lastMessage={lastMessages[m.id] || null} myId={profile.id} />)}
                   </div>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         )}
@@ -1616,6 +1767,79 @@ export default function BartrApp({ profile, session }) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Connection request modal */}
+      {showRequestModal && requestTarget && (
+        <div
+          onClick={() => { setShowRequestModal(false); setRequestMessage(""); setRequestError(""); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "rgba(74,55,40,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "0 20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: C.warmWhite, borderRadius: 20, padding: "28px 24px",
+              width: "100%", maxWidth: 420,
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: "0 8px 40px rgba(74,55,40,0.18)",
+            }}
+          >
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
+              Connect with {requestTarget.name.split(" ")[0]}
+            </div>
+            <div style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.5, marginBottom: 16 }}>
+              Tell them why you want to connect. Max 150 characters.
+            </div>
+            <textarea
+              value={requestMessage}
+              onChange={(e) => setRequestMessage(e.target.value.slice(0, 150))}
+              placeholder="e.g. I'd love to trade guitar lessons for your Spanish tutoring..."
+              rows={4}
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 12,
+                border: `1px solid ${C.sandDark}`, background: C.sand,
+                color: C.bark, fontSize: 14, fontFamily: "'DM Sans', sans-serif",
+                resize: "none", outline: "none",
+              }}
+            />
+            <div style={{ fontSize: 11, color: C.barkLight, textAlign: "right", marginTop: 4, marginBottom: 14 }}>
+              {requestMessage.length}/150
+            </div>
+            {requestError && (
+              <div style={{ fontSize: 13, color: C.terracotta, marginBottom: 14, lineHeight: 1.5 }}>
+                {requestError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { setShowRequestModal(false); setRequestMessage(""); setRequestError(""); }}
+                style={{
+                  flex: 1, padding: "13px", minHeight: 44, borderRadius: 100,
+                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                  color: C.barkLight, fontSize: 14, fontWeight: 500,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Cancel</button>
+              <button
+                onClick={handleSendRequest}
+                disabled={!requestMessage.trim() || requestLoading}
+                style={{
+                  flex: 2, padding: "13px", minHeight: 44, borderRadius: 100,
+                  background: !requestMessage.trim() || requestLoading ? C.sandDark : C.terracotta,
+                  border: "none", color: C.cream, fontSize: 14, fontWeight: 500,
+                  cursor: !requestMessage.trim() || requestLoading ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', sans-serif",
+                  opacity: requestLoading ? 0.7 : 1,
+                }}
+              >{requestLoading ? "Sending..." : "Send Request 🤝"}</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Match overlay */}

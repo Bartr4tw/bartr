@@ -27,8 +27,13 @@ export default function ProfileView() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const myIdRef = useRef(null);
-  const [swipeRecord, setSwipeRecord] = useState(undefined); // undefined=loading, null=none, {direction}=exists
-  const [swipeActing, setSwipeActing] = useState(false);
+  // connRequest: undefined=loading, null=none, {type, id, status}
+  const [connRequest, setConnRequest] = useState(undefined);
+  const [isMatched, setIsMatched] = useState(false);
+  const [showReqModal, setShowReqModal] = useState(false);
+  const [reqMessage, setReqMessage] = useState("");
+  const [reqLoading, setReqLoading] = useState(false);
+  const [reqError, setReqError] = useState("");
   const [showMatchBanner, setShowMatchBanner] = useState(false);
 
   useEffect(() => {
@@ -43,53 +48,75 @@ export default function ProfileView() {
         fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trade_requests?user_id=eq.${userId}&status=eq.open&limit=1`, { headers }),
       ];
       if (!isSelfNow) {
-        fetches.push(fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${session.user.id}&swiped_id=eq.${userId}`,
-          { headers }
-        ));
+        const myId = session.user.id;
+        const user_a = myId < userId ? myId : userId;
+        const user_b = myId < userId ? userId : myId;
+        fetches.push(
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${myId}&receiver_id=eq.${userId}&select=id,status`, { headers }),
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${userId}&receiver_id=eq.${myId}&select=id,status`, { headers }),
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches?user_a=eq.${user_a}&user_b=eq.${user_b}&select=id`, { headers }),
+        );
       }
       const results = await Promise.all(fetches);
       const rows = await results[0].json();
-      if (!Array.isArray(rows) || !rows[0]) {
-        setNotFound(true);
-      } else {
-        setProfile(rows[0]);
-      }
+      if (!Array.isArray(rows) || !rows[0]) { setNotFound(true); } else { setProfile(rows[0]); }
       const trRows = await results[1].json();
       if (Array.isArray(trRows) && trRows[0]) setTradeRequest(trRows[0]);
       if (!isSelfNow) {
-        const swipeRows = await results[2].json();
-        setSwipeRecord(Array.isArray(swipeRows) && swipeRows[0] ? swipeRows[0] : null);
+        const outgoing = await results[2].json();
+        const incoming = await results[3].json();
+        const matchRows = await results[4].json();
+        if (Array.isArray(matchRows) && matchRows.length > 0) {
+          setIsMatched(true);
+          setConnRequest(null);
+        } else if (Array.isArray(outgoing) && outgoing[0]) {
+          setConnRequest({ type: "outgoing", id: outgoing[0].id, status: outgoing[0].status });
+        } else if (Array.isArray(incoming) && incoming[0]) {
+          setConnRequest({ type: "incoming", id: incoming[0].id, status: incoming[0].status });
+        } else {
+          setConnRequest(null);
+        }
       }
       setLoading(false);
     });
   }, [userId]);
 
-  const handleLike = async () => {
-    setSwipeActing(true);
+  const handleSendRequest = async () => {
+    if (!reqMessage.trim()) return;
+    setReqLoading(true);
+    setReqError("");
     const myId = myIdRef.current;
     const headers = await getAuthHeaders();
-    if (swipeRecord) {
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${myId}&swiped_id=eq.${userId}`, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ direction: "right" }),
-      });
-    } else {
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ swiper_id: myId, swiped_id: userId, direction: "right" }),
-      });
-    }
-    setSwipeRecord({ direction: "right" });
-    // Check for mutual match
-    const theirSwipeRes = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${userId}&swiped_id=eq.${myId}&direction=eq.right`,
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const rateRows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${myId}&status=eq.pending&created_at=gt.${since}&select=id`,
       { headers }
-    );
-    const theirSwipe = await theirSwipeRes.json();
-    if (Array.isArray(theirSwipe) && theirSwipe.length > 0) {
+    ).then((r) => r.json());
+    if (Array.isArray(rateRows) && rateRows.length >= 5) {
+      setReqError("You've reached your 5 daily requests. Try again tomorrow.");
+      setReqLoading(false);
+      return;
+    }
+    // Check mutual
+    const theirRows = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?sender_id=eq.${userId}&receiver_id=eq.${myId}&status=eq.pending`,
+      { headers }
+    ).then((r) => r.json());
+    const isMutual = Array.isArray(theirRows) && theirRows.length > 0;
+    const postRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ sender_id: myId, receiver_id: userId, message: reqMessage.trim() }),
+    });
+    if (!postRes.ok) { setReqError("Something went wrong. Please try again."); setReqLoading(false); return; }
+    setShowReqModal(false);
+    setReqMessage("");
+    setReqError("");
+    setReqLoading(false);
+    if (isMutual) {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?id=eq.${theirRows[0].id}`,
+        { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "accepted" }) }
+      );
       const user_a = myId < userId ? myId : userId;
       const user_b = myId < userId ? userId : myId;
       await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
@@ -97,31 +124,41 @@ export default function ProfileView() {
         headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
         body: JSON.stringify({ user_a, user_b }),
       });
+      setIsMatched(true);
+      setConnRequest(null);
       setShowMatchBanner(true);
       setTimeout(() => setShowMatchBanner(false), 3000);
+    } else {
+      setConnRequest({ type: "outgoing", status: "pending" });
     }
-    setSwipeActing(false);
   };
 
-  const handlePass = async () => {
-    setSwipeActing(true);
+  const handleAcceptIncoming = async () => {
+    if (!connRequest) return;
     const myId = myIdRef.current;
     const headers = await getAuthHeaders();
-    if (swipeRecord) {
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes?swiper_id=eq.${myId}&swiped_id=eq.${userId}`, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ direction: "left" }),
-      });
-    } else {
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/swipes`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ swiper_id: myId, swiped_id: userId, direction: "left" }),
-      });
-    }
-    setSwipeRecord({ direction: "left" });
-    setSwipeActing(false);
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?id=eq.${connRequest.id}`,
+      { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "accepted" }) }
+    );
+    const user_a = myId < userId ? myId : userId;
+    const user_b = myId < userId ? userId : myId;
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/matches`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({ user_a, user_b }),
+    });
+    setIsMatched(true);
+    setConnRequest(null);
+    navigate(`/chat/${userId}`);
+  };
+
+  const handleDeclineIncoming = async () => {
+    if (!connRequest) return;
+    const headers = await getAuthHeaders();
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/connection_requests?id=eq.${connRequest.id}`,
+      { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status: "declined" }) }
+    );
+    setConnRequest(null);
   };
 
   if (loading) {
@@ -547,6 +584,78 @@ export default function ProfileView() {
         </div>
       )}
 
+      {/* Connection request modal */}
+      {showReqModal && (
+        <div
+          onClick={() => { setShowReqModal(false); setReqMessage(""); setReqError(""); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "rgba(74,55,40,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "0 20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: C.warmWhite, borderRadius: 20, padding: "28px 24px",
+              width: "100%", maxWidth: 420,
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: "0 8px 40px rgba(74,55,40,0.18)",
+            }}
+          >
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>
+              Connect with {firstName}
+            </div>
+            <div style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.5, marginBottom: 16 }}>
+              Tell them why you want to connect. Max 150 characters.
+            </div>
+            <textarea
+              value={reqMessage}
+              onChange={(e) => setReqMessage(e.target.value.slice(0, 150))}
+              placeholder="e.g. I'd love to trade guitar lessons for your Spanish tutoring..."
+              rows={4}
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 12,
+                border: `1px solid ${C.sandDark}`, background: C.sand,
+                color: C.bark, fontSize: 14, fontFamily: "'DM Sans', sans-serif",
+                resize: "none", outline: "none",
+              }}
+            />
+            <div style={{ fontSize: 11, color: C.barkLight, textAlign: "right", marginTop: 4, marginBottom: 14 }}>
+              {reqMessage.length}/150
+            </div>
+            {reqError && (
+              <div style={{ fontSize: 13, color: C.terracotta, marginBottom: 14, lineHeight: 1.5 }}>
+                {reqError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { setShowReqModal(false); setReqMessage(""); setReqError(""); }}
+                style={{
+                  flex: 1, padding: "13px", minHeight: 44, borderRadius: 100,
+                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                  color: C.barkLight, fontSize: 14, fontWeight: 500,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Cancel</button>
+              <button
+                onClick={handleSendRequest}
+                disabled={!reqMessage.trim() || reqLoading}
+                style={{
+                  flex: 2, padding: "13px", minHeight: 44, borderRadius: 100,
+                  background: !reqMessage.trim() || reqLoading ? C.sandDark : C.terracotta,
+                  border: "none", color: C.cream, fontSize: 14, fontWeight: 500,
+                  cursor: !reqMessage.trim() || reqLoading ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', sans-serif", opacity: reqLoading ? 0.7 : 1,
+                }}
+              >{reqLoading ? "Sending..." : "Send Request 🤝"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Match banner */}
       {showMatchBanner && (
         <div style={{
@@ -623,59 +732,44 @@ export default function ProfileView() {
           </>
         ) : (
           <>
-            {swipeRecord === undefined ? (
+            {connRequest === undefined ? (
               <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: C.barkLight, fontSize: 13 }}>
                 Loading...
               </div>
-            ) : swipeRecord?.direction === "right" ? (
+            ) : isMatched ? (
+              <button onClick={() => navigate(`/chat/${userId}`)} style={{
+                flex: 1, padding: "14px", minHeight: 50,
+                background: C.terracotta, border: "none", borderRadius: 100,
+                color: C.cream, fontSize: 15, fontWeight: 500,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              }}>Message {firstName}</button>
+            ) : connRequest?.type === "outgoing" ? (
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <span style={{ fontSize: 18 }}>🤝</span>
+                <span style={{ fontSize: 14, color: C.barkLight, fontWeight: 500 }}>Request Sent</span>
+              </div>
+            ) : connRequest?.type === "incoming" ? (
               <>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <span style={{ fontSize: 18 }}>⚡</span>
-                  <span style={{ fontSize: 14, color: C.terracotta, fontWeight: 600 }}>Liked</span>
-                </div>
-                <button onClick={() => navigate(`/chat/${userId}`)} style={{
+                <button onClick={handleDeclineIncoming} style={{
+                  flex: 1, padding: "14px", minHeight: 50,
+                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
+                  borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}>Decline</button>
+                <button onClick={handleAcceptIncoming} style={{
                   flex: 2, padding: "14px", minHeight: 50,
                   background: C.terracotta, border: "none", borderRadius: 100,
                   color: C.cream, fontSize: 15, fontWeight: 500,
                   cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                }}>Message {firstName}</button>
-              </>
-            ) : swipeRecord?.direction === "left" ? (
-              <>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 14, color: C.barkLight, fontWeight: 500 }}>Passed</span>
-                </div>
-                <button onClick={handleLike} disabled={swipeActing} style={{
-                  flex: 2, padding: "14px", minHeight: 50,
-                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
-                  borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
-                  cursor: swipeActing ? "not-allowed" : "pointer",
-                  fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
-                }}>Undo</button>
+                }}>Accept 🤝</button>
               </>
             ) : (
-              <>
-                <button onClick={handlePass} disabled={swipeActing} style={{
-                  flex: 1, padding: "14px", minHeight: 50,
-                  background: "transparent", border: `1.5px solid ${C.sandDark}`,
-                  borderRadius: 100, color: C.barkLight, fontSize: 15, fontWeight: 500,
-                  cursor: swipeActing ? "not-allowed" : "pointer",
-                  fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
-                }}>Pass</button>
-                <button onClick={() => navigate(`/chat/${userId}`)} style={{
-                  flex: 1, padding: "14px", minHeight: 50,
-                  background: C.sand, border: `1px solid ${C.sandDark}`,
-                  borderRadius: 100, color: C.bark, fontSize: 15, fontWeight: 500,
-                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                }}>Message</button>
-                <button onClick={handleLike} disabled={swipeActing} style={{
-                  flex: 1, padding: "14px", minHeight: 50,
-                  background: C.terracotta, border: "none", borderRadius: 100,
-                  color: C.cream, fontSize: 15, fontWeight: 500,
-                  cursor: swipeActing ? "not-allowed" : "pointer",
-                  fontFamily: "'DM Sans', sans-serif", opacity: swipeActing ? 0.6 : 1,
-                }}>Like 🤝</button>
-              </>
+              <button onClick={() => setShowReqModal(true)} style={{
+                flex: 1, padding: "14px", minHeight: 50,
+                background: C.terracotta, border: "none", borderRadius: 100,
+                color: C.cream, fontSize: 15, fontWeight: 500,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              }}>Request to Connect 🤝</button>
             )}
           </>
         )}
