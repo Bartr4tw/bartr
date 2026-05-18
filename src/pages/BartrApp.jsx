@@ -489,7 +489,7 @@ function MatchCard({ profile, yourProfile, lastMessage, myId }) {
   const isUnread = lastMessage && lastMessage.sender_id !== myId;
   return (
     <div
-      onClick={() => navigate(`/profile/${profile.id}`)}
+      onClick={() => navigate(`/chat/${profile.id}`)}
       style={{
         background: C.warmWhite, borderRadius: 16, padding: "16px",
         border: `1.5px solid ${isUnread ? C.terracotta : C.sandDark}`,
@@ -497,7 +497,10 @@ function MatchCard({ profile, yourProfile, lastMessage, myId }) {
         display: "flex", alignItems: "center", gap: 14,
         cursor: "pointer",
       }}>
-      <div style={{ position: "relative", flexShrink: 0 }}>
+      <div
+        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${profile.id}`); }}
+        style={{ position: "relative", flexShrink: 0 }}
+      >
         <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border={`1.5px solid ${C.sandDark}`} />
         {isUnread && (
           <div style={{
@@ -526,15 +529,6 @@ function MatchCard({ profile, yourProfile, lastMessage, myId }) {
           </div>
         )}
       </div>
-      <button
-        onClick={(e) => { e.stopPropagation(); navigate(`/chat/${profile.id}`); }}
-        style={{
-          background: `rgba(212,113,74,0.10)`,
-          border: `1px solid rgba(212,113,74,0.25)`,
-          borderRadius: 100, padding: "7px 16px",
-          color: C.terracotta, fontSize: 12, fontWeight: 500, cursor: "pointer",
-          minHeight: 44,
-        }}>Message</button>
     </div>
   );
 }
