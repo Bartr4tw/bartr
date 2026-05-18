@@ -484,26 +484,47 @@ function SwipeCard({ profile, yourProfile, onSwipe, onTradeRespond, isMobile }) 
   );
 }
 
-function MatchCard({ profile, yourProfile }) {
+function MatchCard({ profile, yourProfile, lastMessage, myId }) {
   const navigate = useNavigate();
+  const isUnread = lastMessage && lastMessage.sender_id !== myId;
   return (
     <div
       onClick={() => navigate(`/profile/${profile.id}`)}
       style={{
         background: C.warmWhite, borderRadius: 16, padding: "16px",
-        border: `1.5px solid ${C.sandDark}`,
+        border: `1.5px solid ${isUnread ? C.terracotta : C.sandDark}`,
         boxShadow: "0 4px 16px rgba(74,55,40,0.07)",
         display: "flex", alignItems: "center", gap: 14,
         cursor: "pointer",
       }}>
-      <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border={`1.5px solid ${C.sandDark}`} />
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, color: C.bark, fontSize: 16 }}>
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <Avatar url={profile.avatarUrl} initials={profile.avatar} size={50} fontSize={15} border={`1.5px solid ${C.sandDark}`} />
+        {isUnread && (
+          <div style={{
+            position: "absolute", top: 0, right: 0,
+            width: 12, height: 12, borderRadius: "50%",
+            background: C.terracotta, border: `2px solid ${C.warmWhite}`,
+          }} />
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "'Fraunces', serif", fontWeight: isUnread ? 700 : 600, color: C.bark, fontSize: 16 }}>
           {profile.name}
         </div>
-        <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>
-          {profile.offeringIcon} {profile.offering} <span style={{ color: C.terracotta }}>↔</span> {yourProfile.offeringIcon} {yourProfile.offering}
-        </div>
+        {lastMessage ? (
+          <div style={{
+            fontSize: 12, marginTop: 2,
+            color: isUnread ? C.bark : C.barkLight,
+            fontWeight: isUnread ? 600 : 400,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {lastMessage.sender_id === myId ? "You: " : ""}{lastMessage.content}
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>
+            {profile.offeringIcon} {profile.offering} <span style={{ color: C.terracotta }}>↔</span> {yourProfile.offeringIcon} {yourProfile.offering}
+          </div>
+        )}
       </div>
       <button
         onClick={(e) => { e.stopPropagation(); navigate(`/chat/${profile.id}`); }}
@@ -542,6 +563,7 @@ export default function BartrApp({ profile, session }) {
   const [profiles, setProfiles] = useState([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [matches, setMatches] = useState([]);
+  const [lastMessages, setLastMessages] = useState({});
   const [showMatch, setShowMatch] = useState(null);
   const [lastAction, setLastAction] = useState(null);
   const [secondChance, setSecondChance] = useState(false);
@@ -624,8 +646,31 @@ export default function BartrApp({ profile, session }) {
         { headers: authHeaders }
       ).then((r) => r.json());
       setMatches((Array.isArray(profileRows) ? profileRows : []).map(transformProfile));
+      // Fetch last message per conversation
+      const msgs = {};
+      await Promise.all(otherIds.map(async (otherId) => {
+        const rows = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?sender_id=in.(${profile.id},${otherId})&receiver_id=in.(${profile.id},${otherId})&order=created_at.desc&limit=1`,
+          { headers: authHeaders }
+        ).then((r) => r.json());
+        if (Array.isArray(rows) && rows[0]) msgs[otherId] = rows[0];
+      }));
+      setLastMessages(msgs);
     });
   }, [profile?.id]);
+
+  // Refresh last messages whenever the Matches tab is opened
+  useEffect(() => {
+    if (activeTab !== 2 || !profile?.id || !matches.length) return;
+    const msgs = {};
+    Promise.all(matches.map(async (m) => {
+      const rows = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/messages?sender_id=in.(${profile.id},${m.id})&receiver_id=in.(${profile.id},${m.id})&order=created_at.desc&limit=1`,
+        { headers: authHeaders }
+      ).then((r) => r.json());
+      if (Array.isArray(rows) && rows[0]) msgs[m.id] = rows[0];
+    })).then(() => setLastMessages(msgs));
+  }, [activeTab]);
 
   // Fetch category people counts once on first Browse visit
   useEffect(() => {
@@ -1301,7 +1346,7 @@ export default function BartrApp({ profile, session }) {
                     {matches.length} MUTUAL MATCH{matches.length !== 1 ? "ES" : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} />)}
+                    {matches.map(m => <MatchCard key={m.id} profile={m} yourProfile={YOUR_PROFILE} lastMessage={lastMessages[m.id] || null} myId={profile.id} />)}
                   </div>
                 </>
               )}
