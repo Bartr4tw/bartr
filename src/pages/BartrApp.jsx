@@ -92,7 +92,10 @@ const PRONOUN_MAP = { Woman: "She/her", Man: "He/him", "Non-binary": "They/them"
 
 const CATEGORY_EMOJI = {
   "Sports & Fitness": "🏃", "Music": "🎵", "Tech": "💻",
-  "Arts & Crafts": "🎨", "Food": "🍳", "Languages": "🗣️", "Other": "✨",
+  "Arts & Crafts": "🎨", "Food": "🍳", "Languages": "🗣️",
+  "Beauty & Style": "💄", "Performance & Stage": "🎭", "Writing & Media": "✍️",
+  "Business & Money": "💼", "Home & Garden": "🌱", "Wellness & Mind": "🧘",
+  "Games": "♟️",
 };
 const BROWSE_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
 
