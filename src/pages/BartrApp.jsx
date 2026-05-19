@@ -56,6 +56,25 @@ async function enrichWithTradeRequests(profiles) {
   return profiles.map((p) => ({ ...p, tradeRequest: byUserId[p.id] || null }));
 }
 
+const ADJACENT_BOROUGHS = {
+  Manhattan: ["Brooklyn", "Queens", "Bronx"],
+  Brooklyn: ["Manhattan", "Queens"],
+  Queens: ["Manhattan", "Brooklyn", "Bronx"],
+  Bronx: ["Manhattan", "Queens"],
+};
+
+function sortByNeighborhood(profiles, userProfile) {
+  const userBorough = getBorough(userProfile.location);
+  const getTier = (p) => {
+    const b = getBorough(p.location);
+    if (!b || !userBorough) return 3;
+    if (b === userBorough) return 1;
+    if (ADJACENT_BOROUGHS[userBorough]?.includes(b)) return 2;
+    return 3;
+  };
+  return [...profiles].sort((a, b) => getTier(a) - getTier(b));
+}
+
 const PRONOUN_MAP = { Woman: "She/her", Man: "He/him", "Non-binary": "They/them" };
 
 const CATEGORY_EMOJI = {
@@ -640,8 +659,10 @@ export default function BartrApp({ profile, session }) {
         const rows = await fetch(url, { headers: authHeaders }).then((r) => r.json());
         const transformed = (Array.isArray(rows) ? rows : []).map(transformProfile);
         const enriched = await enrichWithTradeRequests(transformed);
-        allProfilesRef.current = enriched;
-        setProfiles(applyFiltersToProfiles(enriched, filters));
+        const sorted = sortByNeighborhood(enriched, profile);
+        console.log("Discover queue (first 5):", sorted.slice(0, 5).map((p) => `${p.name} — ${p.location}`));
+        allProfilesRef.current = sorted;
+        setProfiles(applyFiltersToProfiles(sorted, filters));
         setProfilesLoading(false);
       })
       .catch(() => setProfilesLoading(false));
@@ -826,8 +847,10 @@ export default function BartrApp({ profile, session }) {
 
     const transformed = (Array.isArray(rows) ? rows : []).map(transformProfile);
     const enriched = await enrichWithTradeRequests(transformed);
-    allProfilesRef.current = enriched;
-    setProfiles(applyFiltersToProfiles(enriched, filters));
+    const sorted = sortByNeighborhood(enriched, profile);
+    console.log("Second-chance queue (first 5):", sorted.slice(0, 5).map((p) => `${p.name} — ${p.location}`));
+    allProfilesRef.current = sorted;
+    setProfiles(applyFiltersToProfiles(sorted, filters));
     setSecondChance(true);
     setSecondChanceLoading(false);
   };
