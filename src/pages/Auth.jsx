@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase.js";
 
 const C = {
@@ -116,6 +116,15 @@ export default function Auth() {
   const [error, setError] = useState("");
   const [legalModal, setLegalModal] = useState(null);
   const [inviteCode, setInviteCode] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const codeParam = params.get("code");
+    if (codeParam) {
+      setInviteCode(codeParam);
+      setMode("signup");
+    }
+  }, []);
 
   const handleSubmit = async () => {
     setError("");

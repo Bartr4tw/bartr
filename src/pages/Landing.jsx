@@ -137,12 +137,27 @@ export default function BartrLanding() {
   const [heroVisible, setHeroVisible] = useState(false);
   const [howRef, howInView] = useInView();
   const [manifestoRef, manifestoInView] = useInView();
+  const [foundingRef, foundingInView] = useInView();
+  const [remaining, setRemaining] = useState(200);
+  const [inviteInput, setInviteInput] = useState("");
   const width = useWindowWidth();
   const isMobile = width < 768;
   const isTablet = width >= 768 && width < 1024;
 
   useEffect(() => {
     setTimeout(() => setHeroVisible(true), 100);
+  }, []);
+
+  useEffect(() => {
+    fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/invite_codes?used=eq.true&select=code`,
+      { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } }
+    )
+      .then(r => r.json())
+      .then(used => {
+        setRemaining(200 - (Array.isArray(used) ? used.length : 0));
+      })
+      .catch(() => {});
   }, []);
 
   const steps = [
@@ -176,6 +191,10 @@ export default function BartrLanding() {
         @keyframes marquee {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
         }
         .pill-hover:hover > div {
           background: ${C.sand} !important;
@@ -478,6 +497,139 @@ export default function BartrLanding() {
           <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 24, textTransform: "uppercase" }}>Why Bartr exists</div>
           <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.8, maxWidth: 560 }}>
             Somewhere along the way, we stopped talking to our neighbors. We stopped sharing what we know. We outsourced connection to social media algorithms and wonder why we feel alone. That's why we created Bartr, to encourage humans to once again be human.
+          </p>
+        </div>
+      </section>
+
+      {/* Founding Members */}
+      <section style={{ padding: `${sectionPadV} ${sectionPadH}` }}>
+        <div ref={foundingRef} style={{
+          maxWidth: 600, margin: "0 auto", textAlign: "center",
+          opacity: foundingInView ? 1 : 0,
+          transform: foundingInView ? "translateY(0)" : "translateY(30px)",
+          transition: "all 0.8s ease",
+        }}>
+          <div style={{ fontSize: 11, letterSpacing: 3, color: C.clay, fontWeight: 500, marginBottom: 16, textTransform: "uppercase" }}>
+            NYC Beta · Founding Members
+          </div>
+          <h2 style={{
+            fontFamily: "'Fraunces', serif",
+            fontSize: isMobile ? "clamp(28px, 8vw, 40px)" : "clamp(32px, 5vw, 48px)",
+            fontWeight: 600, lineHeight: 1.15, letterSpacing: -0.5,
+            color: C.bark, marginBottom: 20,
+          }}>
+            Only <em style={{ color: C.terracotta, fontStyle: "italic" }}>200</em> founding members. Be one.
+          </h2>
+          <p style={{ fontSize: isMobile ? 14 : 15, color: C.barkLight, lineHeight: 1.7, maxWidth: 440, margin: "0 auto 36px" }}>
+            Bartr is invite-only for our first 200 members in NYC. Enter your code below to claim your spot.
+          </p>
+
+          {/* Counter card */}
+          <div style={{
+            background: C.sand, border: `1.5px solid ${C.sandDark}`,
+            borderRadius: 20, padding: isMobile ? "28px 20px" : "36px 48px",
+            marginBottom: 24,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: C.terracotta,
+                animation: "pulse 2s ease-in-out infinite",
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 11, letterSpacing: 2, color: C.clay, fontWeight: 700, textTransform: "uppercase" }}>Live Count</span>
+            </div>
+            <div style={{ marginBottom: 8, lineHeight: 1 }}>
+              <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 60 : 80, fontWeight: 600, color: C.terracotta }}>
+                {remaining}
+              </span>
+              <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 30 : 40, fontWeight: 400, color: C.bark }}>
+                /200
+              </span>
+            </div>
+            <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 24 }}>spots remaining</div>
+            <div style={{ height: 8, background: C.sandDark, borderRadius: 100, overflow: "hidden" }}>
+              <div style={{
+                height: "100%", borderRadius: 100, background: C.terracotta,
+                width: `${((200 - remaining) / 200) * 100}%`,
+                transition: "width 1s ease",
+              }} />
+            </div>
+          </div>
+
+          {/* Input + button */}
+          {isMobile ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+              <input
+                type="text"
+                placeholder="Enter your invite code"
+                value={inviteInput}
+                onChange={(e) => setInviteInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && inviteInput.trim())
+                    window.location.href = `/auth?code=${encodeURIComponent(inviteInput.trim())}`;
+                }}
+                style={{
+                  width: "100%", borderRadius: 100, minHeight: 50,
+                  border: `1.5px solid ${C.sandDark}`, background: C.sand,
+                  padding: "0 20px", fontSize: 14, color: C.bark,
+                  fontFamily: "'DM Sans', sans-serif", outline: "none",
+                }}
+              />
+              <button
+                onClick={() => {
+                  window.location.href = inviteInput.trim()
+                    ? `/auth?code=${encodeURIComponent(inviteInput.trim())}`
+                    : "/auth";
+                }}
+                style={{
+                  width: "100%", borderRadius: 100, minHeight: 50, border: "none",
+                  background: C.terracotta, fontSize: 14, fontWeight: 500,
+                  color: C.cream, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Claim my spot →</button>
+            </div>
+          ) : (
+            <div style={{
+              display: "flex", marginBottom: 14,
+              border: `1.5px solid ${C.sandDark}`, borderRadius: 100,
+              overflow: "hidden", background: C.sand,
+            }}>
+              <input
+                type="text"
+                placeholder="Enter your invite code"
+                value={inviteInput}
+                onChange={(e) => setInviteInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && inviteInput.trim())
+                    window.location.href = `/auth?code=${encodeURIComponent(inviteInput.trim())}`;
+                }}
+                style={{
+                  flex: 1, background: "transparent", border: "none", outline: "none",
+                  padding: "0 22px", fontSize: 14, color: C.bark, minHeight: 52,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              />
+              <button
+                onClick={() => {
+                  window.location.href = inviteInput.trim()
+                    ? `/auth?code=${encodeURIComponent(inviteInput.trim())}`
+                    : "/auth";
+                }}
+                style={{
+                  background: C.terracotta, border: "none",
+                  borderRadius: "0 100px 100px 0",
+                  padding: "0 28px", minHeight: 52, flexShrink: 0,
+                  fontSize: 14, fontWeight: 500, color: C.cream,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                  whiteSpace: "nowrap",
+                }}
+              >Claim my spot →</button>
+            </div>
+          )}
+
+          <p style={{ fontSize: 12, color: C.clay, lineHeight: 1.6 }}>
+            Don't have a code? Bartr is growing through word of mouth. Ask someone already in.
           </p>
         </div>
       </section>
