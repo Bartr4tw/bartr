@@ -138,7 +138,7 @@ export default function BartrLanding() {
   const [howRef, howInView] = useInView();
   const [manifestoRef, manifestoInView] = useInView();
   const [foundingRef, foundingInView] = useInView();
-  const [remaining, setRemaining] = useState(200);
+  const [spotsRemaining, setSpotsRemaining] = useState(200);
   const [inviteInput, setInviteInput] = useState("");
   const width = useWindowWidth();
   const isMobile = width < 768;
@@ -154,8 +154,8 @@ export default function BartrLanding() {
       { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } }
     )
       .then(r => r.json())
-      .then(used => {
-        setRemaining(200 - (Array.isArray(used) ? used.length : 0));
+      .then(data => {
+        if (Array.isArray(data)) setSpotsRemaining(200 - data.length);
       })
       .catch(() => {});
   }, []);
@@ -193,6 +193,10 @@ export default function BartrLanding() {
           to { transform: translateX(-50%); }
         }
         @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @keyframes bartrPulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
@@ -238,7 +242,7 @@ export default function BartrLanding() {
                     background: C.terracotta,
                     animation: "pulse 2s ease-in-out infinite",
                   }} />
-                  <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500 }}>Beta · {remaining}/200 spots</span>
+                  <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500 }}>Beta · {spotsRemaining}/200 spots</span>
                 </div>
               </a>
             </>
@@ -540,32 +544,32 @@ export default function BartrLanding() {
 
           {/* Counter card */}
           <div style={{
-            background: C.sand, border: `1.5px solid ${C.sandDark}`,
+            background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
             borderRadius: 20, padding: isMobile ? "28px 20px" : "36px 48px",
             marginBottom: 24,
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
               <div style={{
                 width: 8, height: 8, borderRadius: "50%",
-                background: C.terracotta,
-                animation: "pulse 2s ease-in-out infinite",
-                flexShrink: 0,
+                background: C.terracotta, flexShrink: 0,
+                animation: "bartrPulse 2s ease-in-out infinite",
               }} />
               <span style={{ fontSize: 11, letterSpacing: 2, color: C.clay, fontWeight: 700, textTransform: "uppercase" }}>Live Count</span>
             </div>
             <div style={{ marginBottom: 8, lineHeight: 1 }}>
-              <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 60 : 80, fontWeight: 600, color: C.terracotta }}>
-                {remaining}
+              <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 48 : 64, fontWeight: 800, color: C.terracotta }}>
+                {spotsRemaining}
               </span>
-              <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 30 : 40, fontWeight: 400, color: C.bark }}>
+              <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 24 : 32, fontWeight: 400, color: C.bark }}>
                 /200
               </span>
             </div>
-            <div style={{ fontSize: 13, color: C.barkLight, marginBottom: 24 }}>spots remaining</div>
-            <div style={{ height: 8, background: C.sandDark, borderRadius: 100, overflow: "hidden" }}>
+            <div style={{ fontSize: 13, color: C.barkLight, fontFamily: "'DM Sans', sans-serif", marginBottom: 24 }}>spots remaining</div>
+            <div style={{ height: 6, background: C.sandDark, borderRadius: 100, overflow: "hidden" }}>
               <div style={{
-                height: "100%", borderRadius: 100, background: C.terracotta,
-                width: `${((200 - remaining) / 200) * 100}%`,
+                height: "100%", borderRadius: 100,
+                background: `linear-gradient(90deg, ${C.terracotta}, ${C.clayDeep})`,
+                width: `${((200 - spotsRemaining) / 200) * 100}%`,
                 transition: "width 1s ease",
               }} />
             </div>
@@ -573,7 +577,7 @@ export default function BartrLanding() {
 
           {/* Input + button */}
           {isMobile ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
               <input
                 type="text"
                 placeholder="Enter your invite code"
@@ -584,9 +588,10 @@ export default function BartrLanding() {
                     window.location.href = `/auth?code=${encodeURIComponent(inviteInput.trim())}`;
                 }}
                 style={{
-                  width: "100%", borderRadius: 100, minHeight: 50,
-                  border: `1.5px solid ${C.sandDark}`, background: C.sand,
-                  padding: "0 20px", fontSize: 14, color: C.bark,
+                  width: "100%", minHeight: 44,
+                  borderRadius: 100, border: `1.5px solid ${C.sandDark}`,
+                  background: C.sand, padding: "0 20px",
+                  fontSize: 14, color: C.bark,
                   fontFamily: "'DM Sans', sans-serif", outline: "none",
                 }}
               />
@@ -597,18 +602,15 @@ export default function BartrLanding() {
                     : "/auth";
                 }}
                 style={{
-                  width: "100%", borderRadius: 100, minHeight: 50, border: "none",
-                  background: C.terracotta, fontSize: 14, fontWeight: 500,
-                  color: C.cream, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                  width: "100%", minHeight: 44, border: "none",
+                  borderRadius: 100, background: C.terracotta,
+                  fontSize: 14, fontWeight: 500, color: C.cream,
+                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
                 }}
               >Claim my spot →</button>
             </div>
           ) : (
-            <div style={{
-              display: "flex", marginBottom: 14,
-              border: `1.5px solid ${C.sandDark}`, borderRadius: 100,
-              overflow: "hidden", background: C.sand,
-            }}>
+            <div style={{ display: "flex", marginBottom: 16 }}>
               <input
                 type="text"
                 placeholder="Enter your invite code"
@@ -619,9 +621,12 @@ export default function BartrLanding() {
                     window.location.href = `/auth?code=${encodeURIComponent(inviteInput.trim())}`;
                 }}
                 style={{
-                  flex: 1, background: "transparent", border: "none", outline: "none",
-                  padding: "0 22px", fontSize: 14, color: C.bark, minHeight: 52,
-                  fontFamily: "'DM Sans', sans-serif",
+                  flex: 1, minHeight: 44,
+                  borderRadius: "100px 0 0 100px",
+                  border: `1.5px solid ${C.sandDark}`, borderRight: "none",
+                  background: C.sand, padding: "0 22px",
+                  fontSize: 14, color: C.bark,
+                  fontFamily: "'DM Sans', sans-serif", outline: "none",
                 }}
               />
               <button
@@ -631,20 +636,51 @@ export default function BartrLanding() {
                     : "/auth";
                 }}
                 style={{
-                  background: C.terracotta, border: "none",
+                  minHeight: 44, flexShrink: 0,
                   borderRadius: "0 100px 100px 0",
-                  padding: "0 28px", minHeight: 52, flexShrink: 0,
-                  fontSize: 14, fontWeight: 500, color: C.cream,
-                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                  whiteSpace: "nowrap",
+                  border: "none", background: C.terracotta,
+                  padding: "0 28px", fontSize: 14, fontWeight: 500,
+                  color: "#FAF6EE", cursor: "pointer",
+                  fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap",
                 }}
               >Claim my spot →</button>
             </div>
           )}
 
-          <p style={{ fontSize: 12, color: C.clay, lineHeight: 1.6 }}>
-            Don't have a code? Bartr is growing through word of mouth. Ask someone already in.
+          {/* Fine print */}
+          <p style={{ fontSize: 13, color: C.barkLight, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 20px" }}>
+            Don't have a code? Bartr is growing through word of mouth. Ask someone already in — or connect with us on LinkedIn to request one.
           </p>
+
+          {/* LinkedIn button */}
+          <a
+            href="https://www.linkedin.com/company/bartr-38185440b"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none" }}
+          >
+            <button
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#0A66C2"; e.currentTarget.style.background = "#F0F7FF"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.sandDark; e.currentTarget.style.background = C.warmWhite; }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 10,
+                background: C.warmWhite, border: `1.5px solid ${C.sandDark}`,
+                borderRadius: 100, padding: "11px 22px", cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+              }}
+            >
+              <div style={{
+                width: 18, height: 18, borderRadius: 4, background: "#0A66C2",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
+              </div>
+              <span style={{ fontSize: 13, color: C.bark, fontWeight: 500 }}>Connect on LinkedIn</span>
+              <span style={{ color: C.clay }}>→</span>
+            </button>
+          </a>
         </div>
       </section>
 
