@@ -153,20 +153,22 @@ export default function Auth() {
       }
       const matchedCode = codeRows[0].code;
 
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } }
       });
       if (error) { setError(error.message); setLoading(false); return; }
 
-      // Mark code as used
+      // Mark code as used — include session token when available so RLS allows the UPDATE
+      const token = signUpData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
       fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/invite_codes?code=eq.${encodeURIComponent(matchedCode)}`,
         {
           method: "PATCH",
           headers: {
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Prefer: "return=minimal",
           },
