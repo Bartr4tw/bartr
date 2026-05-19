@@ -75,6 +75,19 @@ function sortByNeighborhood(profiles, userProfile) {
   return [...profiles].sort((a, b) => getTier(a) - getTier(b));
 }
 
+function highlightMatch(text, query) {
+  if (!query) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span style={{ color: "#D4714A" }}>{text.slice(idx, idx + query.length)}</span>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 const PRONOUN_MAP = { Woman: "She/her", Man: "He/him", "Non-binary": "They/them" };
 
 const CATEGORY_EMOJI = {
@@ -623,6 +636,7 @@ export default function BartrApp({ profile, session }) {
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseCounts, setBrowseCounts] = useState({});
   const [browseSkillCounts, setBrowseSkillCounts] = useState({});
+  const [browseSearch, setBrowseSearch] = useState("");
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestTarget, setRequestTarget] = useState(null);
@@ -1097,134 +1111,227 @@ export default function BartrApp({ profile, session }) {
           <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px 100px" : "32px 40px", background: C.cream }}>
             <div style={{ maxWidth: 680, margin: "0 auto" }}>
 
-              {/* Category grid */}
-              <div style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 14 }}>BROWSE BY CATEGORY</div>
-                <div className="browse-cats" style={{
-                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
-                  height: (90 * 2) + 10, overflowY: "scroll",
-                  scrollbarWidth: "none", msOverflowStyle: "none",
+              {/* Search input */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: C.sand, borderRadius: 100, padding: "0 16px",
+                  border: `1.5px solid ${browseSearch ? C.terracotta : C.sandDark}`,
+                  transition: "border-color 0.15s",
                 }}>
-                  {BROWSE_CATEGORIES.map((cat) => {
-                    const active = browseCategory === cat;
-                    const count = browseCounts[cat] ?? 0;
-                    return (
-                      <button key={cat} onClick={() => {
-                        setBrowseCategory(cat);
-                        const catSkills = SKILLS.filter((s) => s.category === cat);
-                        const top = catSkills.sort((a, b) => (browseSkillCounts[b.label] ?? 0) - (browseSkillCounts[a.label] ?? 0))[0];
-                        setBrowseSkill(top?.label || null);
-                      }} style={{
-                        background: active ? "#FDF0EA" : C.warmWhite,
-                        border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
-                        borderRadius: 14, padding: "14px",
-                        cursor: "pointer", textAlign: "left", minHeight: 90,
-                        fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
-                        display: "flex", flexDirection: "column", justifyContent: "space-between",
-                      }}>
-                        <span style={{ fontSize: 26, fontFamily: "Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif" }}>{CATEGORY_EMOJI[cat] || "📌"}</span>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: active ? C.clayDeep : C.bark, lineHeight: 1.3 }}>{cat}</div>
-                          <div style={{ fontSize: 11, color: C.barkLight, marginTop: 3 }}>{count} {count === 1 ? "person" : "people"}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  <span style={{ color: C.barkLight, fontSize: 15, flexShrink: 0 }}>🔍</span>
+                  <input
+                    value={browseSearch}
+                    onChange={(e) => setBrowseSearch(e.target.value)}
+                    placeholder="Search skills..."
+                    style={{
+                      flex: 1, background: "transparent", border: "none", outline: "none",
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: C.bark,
+                      padding: "12px 0",
+                    }}
+                  />
+                  {browseSearch && (
+                    <button
+                      onClick={() => setBrowseSearch("")}
+                      style={{
+                        background: "transparent", border: "none", cursor: "pointer",
+                        color: C.barkLight, fontSize: 20, lineHeight: 1, padding: 0, flexShrink: 0,
+                      }}
+                    >×</button>
+                  )}
                 </div>
               </div>
 
-              {/* Skill chips */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
-                  SKILLS IN {browseCategory.toUpperCase()}
-                </div>
-                <div className="browse-chips" style={{ display: "flex", flexWrap: "nowrap", overflowX: "scroll", gap: 8, scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                  {SKILLS.filter((s) => s.category === browseCategory).sort((a, b) => (browseSkillCounts[b.label] ?? 0) - (browseSkillCounts[a.label] ?? 0)).map((skill) => {
-                    const active = browseSkill === skill.label;
-                    return (
-                      <button key={skill.label} onClick={() => setBrowseSkill(skill.label)} style={{
-                        padding: "8px 14px", borderRadius: 100, minHeight: 36,
-                        background: active ? "#FDF0EA" : C.sand,
-                        border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
-                        color: active ? C.clayDeep : C.bark,
-                        fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                        transition: "all 0.15s",
-                      }}>
-                        {skill.icon} {skill.label}{browseSkillCounts[skill.label] ? ` (${browseSkillCounts[skill.label]})` : ""}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* People list */}
-              <div>
-                <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
-                  {browseSkill ? `PEOPLE OFFERING ${browseSkill.toUpperCase()}` : "SELECT A SKILL"}
-                </div>
-                {browseLoading ? (
-                  <div style={{ textAlign: "center", padding: "40px 0", color: C.barkLight, fontSize: 13 }}>Loading...</div>
-                ) : browseProfiles.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "40px 0", color: C.barkLight, fontSize: 13 }}>
-                    No one offering this skill yet
+              {browseSearch ? (
+                /* Search results */
+                <div>
+                  <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+                    {SKILLS.filter((s) => s.label.toLowerCase().includes(browseSearch.toLowerCase())).length} SKILL{SKILLS.filter((s) => s.label.toLowerCase().includes(browseSearch.toLowerCase())).length !== 1 ? "S" : ""} FOUND
                   </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {browseProfiles.map((p) => {
-                      const wantsMyPrimary = YOUR_PROFILE.offering && p.seeking.includes(YOUR_PROFILE.offering);
-                      const wantsMySecondary = YOUR_PROFILE.offeringSecondary && p.seeking.includes(YOUR_PROFILE.offeringSecondary);
-                      const wantedSkill = wantsMyPrimary ? YOUR_PROFILE.offering : wantsMySecondary ? YOUR_PROFILE.offeringSecondary : null;
-                      const bg = avatarBg(p.id);
-                      return (
-                        <div key={p.id} style={{
-                          background: C.warmWhite, border: `1px solid ${C.sandDark}`,
-                          borderRadius: 14, padding: "14px 16px",
-                          display: "flex", alignItems: "center", gap: 12,
-                        }}>
-                          {p.avatarUrl ? (
-                            <img src={p.avatarUrl} style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `2px solid ${C.sandDark}` }} />
-                          ) : (
+                  {SKILLS.filter((s) => s.label.toLowerCase().includes(browseSearch.toLowerCase())).length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "60px 0" }}>
+                      <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: C.bark, marginBottom: 6 }}>No skills found</div>
+                      <div style={{ fontSize: 13, color: C.barkLight }}>Try a different search</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {SKILLS.filter((s) => s.label.toLowerCase().includes(browseSearch.toLowerCase())).map((skill) => {
+                        const count = browseSkillCounts[skill.label] ?? 0;
+                        return (
+                          <button
+                            key={skill.label}
+                            onClick={() => {
+                              setBrowseSkill(skill.label);
+                              setBrowseCategory(skill.category);
+                              setBrowseSearch("");
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = C.sand; e.currentTarget.style.borderColor = C.terracotta; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = C.warmWhite; e.currentTarget.style.borderColor = C.sandDark; }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 12,
+                              background: C.warmWhite, border: `1px solid ${C.sandDark}`,
+                              borderRadius: 14, padding: "12px 14px",
+                              cursor: "pointer", textAlign: "left", width: "100%",
+                              fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                            }}
+                          >
                             <div style={{
-                              width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
-                              background: bg, border: `2px solid ${C.sandDark}`,
+                              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                              background: C.sand, border: `1px solid ${C.sandDark}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: 16, color: "#fff",
-                            }}>{p.avatar}</div>
-                          )}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 15, fontWeight: 600, color: C.bark }}>
-                              {p.name}{p.age ? `, ${p.age}` : ""}
+                              fontSize: 18,
+                            }}>{skill.icon}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, fontWeight: 700, color: C.bark }}>
+                                {highlightMatch(skill.label, browseSearch)}
+                              </div>
+                              <div style={{ fontSize: 11, color: C.barkLight, marginTop: 2 }}>{skill.category}</div>
                             </div>
-                            <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {p.location}</div>
-                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 }}>
-                              {p.swapPreference.map((sp) => (
-                                <span key={sp} style={{
-                                  background: C.sand, border: `1px solid ${C.sandDark}`,
-                                  borderRadius: 100, padding: "3px 10px",
-                                  fontSize: 11, color: C.barkLight,
-                                }}>{sp}</span>
-                              ))}
-                              {wantedSkill && (
-                                <span style={{
-                                  background: "#5a9e6f",
-                                  borderRadius: 100, padding: "3px 10px",
-                                  fontSize: 11, color: "#fff", fontWeight: 600,
-                                }}>Wants: {wantedSkill}</span>
-                              )}
+                            <span style={{
+                              background: C.sand, border: `1px solid ${C.sandDark}`,
+                              borderRadius: 100, padding: "4px 10px",
+                              fontSize: 11, color: C.clay, flexShrink: 0, whiteSpace: "nowrap",
+                            }}>{count} {count === 1 ? "person" : "people"}</span>
+                            <span style={{ color: C.barkLight, fontSize: 18, flexShrink: 0 }}>›</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Normal Browse: category grid + skill chips + people list */
+                <>
+                  {/* Category grid */}
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 14 }}>BROWSE BY CATEGORY</div>
+                    <div className="browse-cats" style={{
+                      display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
+                      height: (90 * 2) + 10, overflowY: "scroll",
+                      scrollbarWidth: "none", msOverflowStyle: "none",
+                    }}>
+                      {BROWSE_CATEGORIES.map((cat) => {
+                        const active = browseCategory === cat;
+                        const count = browseCounts[cat] ?? 0;
+                        return (
+                          <button key={cat} onClick={() => {
+                            setBrowseCategory(cat);
+                            const catSkills = SKILLS.filter((s) => s.category === cat);
+                            const top = catSkills.sort((a, b) => (browseSkillCounts[b.label] ?? 0) - (browseSkillCounts[a.label] ?? 0))[0];
+                            setBrowseSkill(top?.label || null);
+                          }} style={{
+                            background: active ? "#FDF0EA" : C.warmWhite,
+                            border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
+                            borderRadius: 14, padding: "14px",
+                            cursor: "pointer", textAlign: "left", minHeight: 90,
+                            fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                            display: "flex", flexDirection: "column", justifyContent: "space-between",
+                          }}>
+                            <span style={{ fontSize: 26, fontFamily: "Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif" }}>{CATEGORY_EMOJI[cat] || "📌"}</span>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: active ? C.clayDeep : C.bark, lineHeight: 1.3 }}>{cat}</div>
+                              <div style={{ fontSize: 11, color: C.barkLight, marginTop: 3 }}>{count} {count === 1 ? "person" : "people"}</div>
                             </div>
-                          </div>
-                          <button onClick={() => navigate(`/profile/${p.id}`)} style={{
-                            width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                            background: C.sand, border: `1px solid ${C.sandDark}`,
-                            cursor: "pointer", fontSize: 16, color: C.barkLight,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>→</button>
-                        </div>
-                      );
-                    })}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Skill chips */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+                      SKILLS IN {browseCategory.toUpperCase()}
+                    </div>
+                    <div className="browse-chips" style={{ display: "flex", flexWrap: "nowrap", overflowX: "scroll", gap: 8, scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                      {SKILLS.filter((s) => s.category === browseCategory).sort((a, b) => (browseSkillCounts[b.label] ?? 0) - (browseSkillCounts[a.label] ?? 0)).map((skill) => {
+                        const active = browseSkill === skill.label;
+                        return (
+                          <button key={skill.label} onClick={() => setBrowseSkill(skill.label)} style={{
+                            padding: "8px 14px", borderRadius: 100, minHeight: 36,
+                            background: active ? "#FDF0EA" : C.sand,
+                            border: `1.5px solid ${active ? C.terracotta : C.sandDark}`,
+                            color: active ? C.clayDeep : C.bark,
+                            fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                            transition: "all 0.15s",
+                          }}>
+                            {skill.icon} {skill.label}{browseSkillCounts[skill.label] ? ` (${browseSkillCounts[skill.label]})` : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* People list */}
+                  <div>
+                    <div style={{ fontSize: 11, color: C.barkLight, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+                      {browseSkill ? `PEOPLE OFFERING ${browseSkill.toUpperCase()}` : "SELECT A SKILL"}
+                    </div>
+                    {browseLoading ? (
+                      <div style={{ textAlign: "center", padding: "40px 0", color: C.barkLight, fontSize: 13 }}>Loading...</div>
+                    ) : browseProfiles.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "40px 0", color: C.barkLight, fontSize: 13 }}>
+                        No one offering this skill yet
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {browseProfiles.map((p) => {
+                          const wantsMyPrimary = YOUR_PROFILE.offering && p.seeking.includes(YOUR_PROFILE.offering);
+                          const wantsMySecondary = YOUR_PROFILE.offeringSecondary && p.seeking.includes(YOUR_PROFILE.offeringSecondary);
+                          const wantedSkill = wantsMyPrimary ? YOUR_PROFILE.offering : wantsMySecondary ? YOUR_PROFILE.offeringSecondary : null;
+                          const bg = avatarBg(p.id);
+                          return (
+                            <div key={p.id} style={{
+                              background: C.warmWhite, border: `1px solid ${C.sandDark}`,
+                              borderRadius: 14, padding: "14px 16px",
+                              display: "flex", alignItems: "center", gap: 12,
+                            }}>
+                              {p.avatarUrl ? (
+                                <img src={p.avatarUrl} style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `2px solid ${C.sandDark}` }} />
+                              ) : (
+                                <div style={{
+                                  width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
+                                  background: bg, border: `2px solid ${C.sandDark}`,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: 16, color: "#fff",
+                                }}>{p.avatar}</div>
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontFamily: "'Fraunces', serif", fontSize: 15, fontWeight: 600, color: C.bark }}>
+                                  {p.name}{p.age ? `, ${p.age}` : ""}
+                                </div>
+                                <div style={{ fontSize: 12, color: C.barkLight, marginTop: 2 }}>📍 {p.location}</div>
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 }}>
+                                  {p.swapPreference.map((sp) => (
+                                    <span key={sp} style={{
+                                      background: C.sand, border: `1px solid ${C.sandDark}`,
+                                      borderRadius: 100, padding: "3px 10px",
+                                      fontSize: 11, color: C.barkLight,
+                                    }}>{sp}</span>
+                                  ))}
+                                  {wantedSkill && (
+                                    <span style={{
+                                      background: "#5a9e6f",
+                                      borderRadius: 100, padding: "3px 10px",
+                                      fontSize: 11, color: "#fff", fontWeight: 600,
+                                    }}>Wants: {wantedSkill}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <button onClick={() => navigate(`/profile/${p.id}`)} style={{
+                                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                                background: C.sand, border: `1px solid ${C.sandDark}`,
+                                cursor: "pointer", fontSize: 16, color: C.barkLight,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}>→</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
