@@ -227,6 +227,18 @@ export default function BartrLanding() {
             <>
               <a href="#how" style={{ fontSize: 13, color: C.barkLight, textDecoration: "none", fontWeight: 500 }}>How it works</a>
               <a href="#mission" style={{ fontSize: 13, color: C.barkLight, textDecoration: "none", fontWeight: 500 }}>Mission</a>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                background: C.sand, border: `1px solid ${C.sandDark}`,
+                borderRadius: 100, padding: "5px 12px",
+              }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                  background: C.terracotta,
+                  animation: "pulse 2s ease-in-out infinite",
+                }} />
+                <span style={{ fontSize: 12, color: C.barkLight, fontWeight: 500 }}>Beta · {remaining}/200 spots</span>
+              </div>
             </>
           )}
           <a href="/auth" style={{ textDecoration: "none" }}>
